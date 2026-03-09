@@ -56,7 +56,7 @@ class PermissionSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $role = Role::firstOrCreate([
-            'name' => 'IT',
+            'name' => 'IE',
             'guard_name' => 'web',
         ]);
 
@@ -69,7 +69,7 @@ class PermissionSeeder extends Seeder
         */
         $user = User::find(1);
         if ($user) {
-            $user->assignRole('IT');
+            $user->assignRole('IE');
         }
     }
 }

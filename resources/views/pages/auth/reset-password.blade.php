@@ -43,7 +43,7 @@
             />
 
             <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full" data-test="reset-password-button">
+                <flux:button type="submit" variant="primary" class="w-full" style="background-color: rgb(42, 82, 152);" data-test="reset-password-button">
                     {{ __('Reset password') }}
                 </flux:button>
             </div>

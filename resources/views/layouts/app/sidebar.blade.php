@@ -1,50 +1,64 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+
 <head>
     @include('partials.head')
 </head>
-<body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:sidebar sticky collapsible class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+
+<body class="min-h-screen bg-white dark:bg-zinc-800 pb-6">
+    <flux:sidebar sticky collapsible
+        class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 z-90 mb-6">
         <flux:sidebar.header>
             <flux:sidebar.brand name="{{ config('app.name') }}" :href="route('dashboard')">
                 <x-app-logo-icon class="size-6 fill-current text-black dark:text-white" />
             </flux:sidebar.brand>
-            <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
+            <flux:sidebar.collapse
+                class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
         </flux:sidebar.header>
         <flux:sidebar.nav>
             @can('read_dashboard')
-            <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">{{ __('Dashboard') }}</flux:sidebar.item>
+                <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </flux:sidebar.item>
             @endcan
-            <flux:sidebar.item icon="chart-bar" :href="route('menu.analyst')" :current="request()->routeIs('menu.analyst')" wire:navigate>
+            <flux:sidebar.item icon="chart-bar" :href="route('menu.analyst')"
+                :current="request()->routeIs('menu.analyst')" wire:navigate>
                 Analyst Flow
             </flux:sidebar.item>
-            <flux:sidebar.item icon="arrow-trending-up" :href="route('menu.report')" :current="request()->routeIs('menu.report')" wire:navigate>
+            <flux:sidebar.item icon="arrow-trending-up" :href="route('menu.report')"
+                :current="request()->routeIs('menu.report')" wire:navigate>
                 Report Analyst
             </flux:sidebar.item>
 
             @php
-            $isUserManagementActive = request()->routeIs(
-            'management.role',
-            'management.user'
-            );
+                $isUserManagementActive = request()->routeIs(
+                    'management.role',
+                    'management.user'
+                );
             @endphp
             @canany(['read_role', 'read_user'])
-            <flux:sidebar.group heading="Managemen User" icon="cog-6-tooth" expandable :expanded="$isUserManagementActive">
-                @can('read_role')
-                <flux:sidebar.item icon="user-group" :href="route('management.role')" :current="request()->routeIs('management.role')" wire:navigate>
-                    Kelola Role
-                </flux:sidebar.item>
-                @endcan
-                @can('read_user')
-                <flux:sidebar.item icon="user" :href="route('management.user')" :current="request()->routeIs('management.user')" wire:navigate>
-                    Kelola Pengguna
-                </flux:sidebar.item>
-                @endcan
-            </flux:sidebar.group>
+                <flux:sidebar.group heading="Managemen User" icon="cog-6-tooth" expandable
+                    :expanded="$isUserManagementActive">
+                    @can('read_role')
+                        <flux:sidebar.item icon="user-group" :href="route('management.role')"
+                            :current="request()->routeIs('management.role')" wire:navigate>
+                            Kelola Role
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('read_user')
+                        <flux:sidebar.item icon="user" :href="route('management.user')"
+                            :current="request()->routeIs('management.user')" wire:navigate>
+                            Kelola Pengguna
+                        </flux:sidebar.item>
+                    @endcan
+                </flux:sidebar.group>
             @endcanany
         </flux:sidebar.nav>
 
         <flux:sidebar.spacer />
+        <flux:sidebar.item icon="sun" tooltip="$flux.appearance === 'dark' ? 'Light Mode' : 'Dark Mode'" x-on:click="$flux.appearance = $flux.appearance === 'dark' ? 'light' : 'dark'" class="cursor-pointer">
+            <span x-text="$flux.appearance === 'dark' ? 'Light Mode' : 'Dark Mode'"></span>
+        </flux:sidebar.item>
         <flux:dropdown position="top" align="start" class="max-lg:hidden">
             <flux:sidebar.profile :name="auth()->user()->name">
                 <x-slot name="avatar">
@@ -75,7 +89,8 @@
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <flux:menu.item as="button" type="submit" variant="danger" icon="arrow-right-start-on-rectangle" class="w-full">
+                    <flux:menu.item as="button" type="submit" variant="danger" icon="arrow-right-start-on-rectangle"
+                        class="w-full">
                         {{ __('Log Out') }}
                     </flux:menu.item>
                 </form>
@@ -119,7 +134,8 @@
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full cursor-pointer" data-test="logout-button">
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle"
+                        class="w-full cursor-pointer" data-test="logout-button">
                         {{ __('Log Out') }}
                     </flux:menu.item>
                 </form>
@@ -134,5 +150,11 @@
     <x-confirm-delete />
 
     @fluxScripts
+
+    <footer
+        class="fixed z-20 bottom-0 w-full text-end px-6 py-4 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-zinc-800 shadow-inner">
+        &copy; {{ date('Y') }} PT. Fukuryo Indonesia. All rights reserved.
+    </footer>
 </body>
+
 </html>

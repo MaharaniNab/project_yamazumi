@@ -7,13 +7,11 @@ use Illuminate\Support\Facades\Route;
 //     return view('dashboard');
 // })->name('dashboard');
 
-// Route::view('/', 'dashboard')
-//     ->middleware(['auth', 'verified'])
-//     ->name('dashboard');
-
-Route::get('/', Dashboard::class)
+Route::livewire('/', 'pages::menu.dashboard')
     ->middleware(['auth'])
     ->name('dashboard');
+    
+// Route::livewire('dashboard', 'pages::menu.dashboard')->name('dashboard');
 
 Route::prefix('management')->name('management.')->group(function () {
     Route::livewire('role', 'pages::management.role-management')->name('role');

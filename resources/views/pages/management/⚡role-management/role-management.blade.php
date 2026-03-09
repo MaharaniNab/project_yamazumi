@@ -1,12 +1,9 @@
-<div class="w-full bg-white dark:bg-neutral-900 shadow-xl rounded-xl overflow-hidden 
-     border-t-4 border-blue-500 mx-auto">
-
-    <!-- HEADER -->
+<div class="w-full bg-white dark:bg-neutral-900 shadow-xl rounded-xl overflow-hidden border-t-4 border-blue-500 mx-auto">
     <div class="border-b border-gray-200 dark:border-neutral-800 p-4 flex justify-between items-center bg-gray-50 dark:bg-neutral-800/60">
         <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100">Managemen Role</h3>
     </div>
     <div class="p-6 space-y-2">
-        <div class="flex justify-between items-center py-4">
+        <div class="flex justify-between items-center">
             {{-- Show entries --}}
             <div class="flex items-center gap-2 text-sm">
                 <span>Show</span>
