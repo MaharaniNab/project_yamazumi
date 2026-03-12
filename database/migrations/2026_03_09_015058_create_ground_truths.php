@@ -14,8 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('station_id')->constrained('station_results')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('raw_id')->constrained('raw_segments')->cascadeOnDelete();
             $table->timestamp('input_at')->nullable();
+            $table->string('activity', 100)->comment('Harus sama dengan aktivitas di raw_segments');
             $table->double('start_time')->comment('Waktu mulai (detik dari awal video)');
             $table->double('end_time')->comment('Waktu akhir (detik)');
             $table->double('duration')->comment('end_time - start_time (detik)');

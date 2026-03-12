@@ -34,6 +34,16 @@
                 Simulation
             </flux:sidebar.item>
 
+            <flux:sidebar.item icon="bookmark" :href="route('data.riwayat')"
+                :current="request()->routeIs('data.riwayat')" wire:navigate>
+                Riwayat
+            </flux:sidebar.item>
+
+            <flux:sidebar.item icon="clock" :href="route('data.validasi_iou')"
+                :current="request()->routeIs('data.validasi_iou')" wire:navigate>
+                Validasi IOU
+            </flux:sidebar.item>
+
             @php
                 $isUserManagementActive = request()->routeIs(
                     'management.role',

@@ -3,11 +3,11 @@
     <div class="mb-8">
         <flux:heading size="lg" class="font-semibold">
             Upload Video Process
+            <flux:subheading class="flex items-center text-sm text-neutral-500">
+                Lengkapi informasi line dan unggah video untuk memulai proses analisis.
+            </flux:subheading>
         </flux:heading>
 
-        <flux:text size="md" class="text-slate-500 mt-1">
-            Lengkapi informasi line dan unggah video untuk memulai proses analisis.
-        </flux:text>
     </div>
     {{-- STEPPER --}}
     <div class="flex items-center justify-between mb-10">
@@ -143,8 +143,7 @@
                 </div>
             </div>
 
-            <flux:file-upload wire:model.live="file_list" multiple
-                accept=".mp4,.avi,.mov,.mkv,.mts">
+            <flux:file-upload wire:model.live="file_list" multiple accept=".mp4,.avi,.mov,.mkv,.mts">
                 <flux:file-upload.dropzone class="min-h-[220px] flex flex-col items-center justify-center
                rounded-2xl border-2 border-dashed
                border-slate-300 dark:border-slate-600

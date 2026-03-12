@@ -28,13 +28,8 @@ class SimulationResult extends Model
         return $this->hasMany(SimulationAction::class, 'simulation_id');
     }
 
-    public function kaizens()
+    public function stations()
     {
-        return $this->actions()->where('action_type', 'kaizen');
-    }
-
-    public function redistributions()
-    {
-        return $this->actions()->where('action_type', 'redistribution');
+        return $this->hasMany(SimulationStation::class, 'simulation_id', 'id');
     }
 }

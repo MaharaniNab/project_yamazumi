@@ -85,7 +85,6 @@ class DatabaseSeeder extends Seeder
                         ->count(2)
                         ->create([
                             'station_id' => $station->id,
-                            'raw_id' => $segment->id,
                             'user_id' => $user->id
                         ]);
                 }

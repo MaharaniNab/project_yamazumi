@@ -3,11 +3,12 @@
         <div>
             <flux:heading size="lg" class="font-semibold">
                 Line Jas B — Sewing Dept.
+                <flux:subheading class="flex items-center text-sm text-neutral-500">
+                    Analisis Variabilitas & Robust Line Balancing ·
+                    {{ $target }} pcs/hari · {{ $operators }} Operator
+                </flux:subheading>
             </flux:heading>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                Analisis Variabilitas & Robust Line Balancing ·
-                {{ $target }} pcs/hari · {{ $operators }} Operator
-            </p>
+
         </div>
 
         <div class="flex gap-2">
@@ -44,7 +45,7 @@
             @endphp
 
             <div class="group cursor-pointer transition duration-500 hover:-translate-y-2">
-                <flux:card class="relative overflow-hidden py-4 px-6 rounded-2xl shadow-md transition-all duration-500"
+                <flux:card class="relative dark:bg-neutral-900 overflow-hidden py-4 px-6 rounded-2xl shadow-md transition-all duration-500"
                     style="border-top:4px solid {{ $kpi['accent'] }}">
                     <div class="text-md font-semibold text-gray-700 dark:text-neutral-200">
                         {{ $kpi['label'] }}
@@ -193,7 +194,8 @@
                                 {{ $el->elemen_kerja }}
                             </flux:table.cell>
                             <flux:table.cell align="center">
-                                <flux:badge size="sm" color="{{ $el->kategori_va == 'VA' ? 'green' : ($el->kategori_va == 'N-NVA' ? 'yellow' : 'red') }}">
+                                <flux:badge size="sm"
+                                    color="{{ $el->kategori_va == 'VA' ? 'green' : ($el->kategori_va == 'N-NVA' ? 'yellow' : 'red') }}">
                                     {{ $el->kategori_va }}
                                 </flux:badge>
                             </flux:table.cell>

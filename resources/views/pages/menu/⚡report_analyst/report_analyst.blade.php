@@ -2,12 +2,15 @@
     <div class="flex items-center justify-between">
         <div>
             <flux:heading size="lg" class="font-semibold">
-                Line Jas B — Sewing Dept.
+                Report Analyst — Line Jas B
+                <flux:subheading class="flex items-center text-sm text-neutral-500 space-x-2">
+                    <span>Station: {{ $n_stations }}</span>
+                    <span>·</span>
+                    <span>Takt Time: {{ number_format($taktTime, 1) }}s</span>
+                    <span>·</span>
+                    <span>Output: {{ $target }} pcs/hari</span>
+                </flux:subheading>
             </flux:heading>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                Analisis Variabilitas & Robust Line Balancing ·
-                {{ $target }} pcs/hari · {{ $operators }} Operator
-            </p>
         </div>
 
         <div class="flex gap-2">
@@ -102,7 +105,7 @@
             </flux:heading>
             <div class="pt-4 border-t"></div>
             <flux:table class="w-full text-sm">
-                <flux:table.columns class="font-medium bg-gray-100 dark:bg-neutral-800">
+                <flux:table.columns class="font-medium bg-gray-100 dark:bg-neutral-700">
                     <flux:table.column class="!px-4">Stasiun</flux:table.column>
                     <flux:table.column align="center">CT</flux:table.column>
                     <flux:table.column align="center">CV</flux:table.column>
@@ -141,7 +144,8 @@
 
                         <flux:table.row>
                             <flux:table.cell align="left" class="!px-4">
-                                <div class="font-medium text-sm text-pretty md:text-balance text-gray-800">
+                                <div
+                                    class="font-medium text-sm text-pretty md:text-balance text-gray-800 dark:text-gray-100">
                                     {{ $station }}
                                 </div>
                             </flux:table.cell>
@@ -190,14 +194,14 @@
         </flux:heading>
 
         <flux:table>
-            <flux:table.columns>
-                <flux:table.column>Stasiun</flux:table.column>
+            <flux:table.columns class="font-medium bg-gray-100 dark:bg-neutral-700">
+                <flux:table.column class="!px-4">Stasiun</flux:table.column>
                 <flux:table.column>Elemen Kerja</flux:table.column>
                 <flux:table.column align="center">Kategori</flux:table.column>
                 <flux:table.column align="center">Durasi / Siklus</flux:table.column>
                 <flux:table.column align="center">Std Dev</flux:table.column>
                 <flux:table.column align="center">CV</flux:table.column>
-                <flux:table.column align="center">Frekuensi</flux:table.column>
+                <flux:table.column align="center" class="!px-4">Frekuensi</flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
@@ -213,22 +217,26 @@
                                     $cvColor = 'yellow';
                                 }
                             @endphp
-                            <flux:table.row>
-                                <flux:table.cell class="!font-medium">{{ $stationName }}</flux:table.cell>
+                            <flux:table.row
+                                class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
+                                <flux:table.cell class="!font-medium !px-4">{{ $stationName }}</flux:table.cell>
                                 <flux:table.cell class="!font-medium">{{ $el->elemen_kerja }}</flux:table.cell>
                                 <flux:table.cell class="!font-medium" align="center">
-                                    <flux:badge size="sm" color="{{ $el->kategori_va == 'VA' ? 'green' : ($el->kategori_va == 'N-NVA' ? 'yellow' : 'red') }}">
+                                    <flux:badge size="sm"
+                                        color="{{ $el->kategori_va == 'VA' ? 'green' : ($el->kategori_va == 'N-NVA' ? 'yellow' : 'red') }}">
                                         {{ $el->kategori_va }}
                                     </flux:badge>
                                 </flux:table.cell>
-                                <flux:table.cell class="!font-medium" align="center">{{ number_format($el->durasi_detik, 1) }}s</flux:table.cell>
-                                <flux:table.cell class="!font-medium" align="center">±{{ number_format($el->std_dev, 1) }}s</flux:table.cell>
+                                <flux:table.cell class="!font-medium" align="center">{{ number_format($el->durasi_detik, 1) }}s
+                                </flux:table.cell>
+                                <flux:table.cell class="!font-medium" align="center">±{{ number_format($el->std_dev, 1) }}s
+                                </flux:table.cell>
                                 <flux:table.cell class="!font-medium" align="center">
                                     <span class="text-{{ $cvColor }}-600">
                                         {{ number_format($el->cv_persen, 1) }}%
                                     </span>
                                 </flux:table.cell>
-                                <flux:table.cell class="!font-medium" align="center">{{ $el->frekuensi }}×</flux:table.cell>
+                                <flux:table.cell class="!font-medium !px-4" align="center">{{ $el->frekuensi }}×</flux:table.cell>
                             </flux:table.row>
                         @endforeach
                     @endif

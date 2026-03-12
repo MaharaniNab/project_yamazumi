@@ -38,6 +38,7 @@ return new class extends Migration {
 
             // Output & Operator
             $table->integer('line_output_hari')->nullable()->comment('Output aktual/hari = jam_kerja_detik / neck_time_mean');
+            $table->integer('mp_aktual')->default(0)->comment('Jumlah operator aktual di line (input pengguna sebelum analisa)');
             $table->double('op_teoritis')->nullable()->comment('Operator teoritis = Σ CT_i / Takt Time');
             $table->integer('n_stations')->nullable()->comment('Jumlah stasiun (operator) dalam lini');
             $table->string('chart_path', 200)->nullable()->comment('Relative path file Yamazumi Chart PNG');

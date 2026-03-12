@@ -17,50 +17,61 @@ class GroundTruthFactory extends Factory
      *
      * @return array<string, mixed>
      */
+
     // public function definition(): array
     // {
-    //     $start = $this->faker->randomFloat(2, 0, 100);
-    //     $end = $this->faker->randomFloat(2, 1, 100);
+    //     $raw = RawSegment::inRandomOrder()->first();
+    //     $station = $raw->station;
+    //     $user = User::inRandomOrder()->first();
+
+    //     // deviasi anotasi manusia (±0.2 detik)
+    //     $start = max(0, $raw->start_time + $this->faker->randomFloat(3, -0.2, 0.2));
+    //     $end = $raw->end_time + $this->faker->randomFloat(3, -0.2, 0.2);
+
+    //     // pastikan end > start
+    //     if ($end <= $start) {
+    //         $end = $start + 0.1;
+    //     }
+
     //     $duration = $end - $start;
 
     //     return [
-    //         'station_id' =>StationResult::inRandomOrder()->first()->id,
-    //         'user_id' => User::inRandomOrder()->first()->id,
-    //         'raw_id'=> $this->faker->randomElement(RawSegment::all())->id,
-    //         'input_at' => now(),
+
+    //         'station_id' => $station->id,
+    //         'user_id' => $user->id,
+    //         'activity' => $raw->activity, // harus sama dengan raw_segments
+    //         'input_at' => now()->subMinutes(rand(1, 120)),
     //         'start_time' => $start,
     //         'end_time' => $end,
     //         'duration' => $duration,
-    //         'catatan' => $this->faker->sentence(),
+    //         'catatan' => $this->faker->optional()->randomElement([
+    //             'Perlu dicek ulang frame',
+    //             'Gerakan operator kurang jelas',
+    //             'Overlap aktivitas',
+    //             'Ok',
+    //             'Frame blur'
+    //         ]),
     //     ];
-
     // }
+
     public function definition(): array
     {
+        // Tentukan start dan end time
         $raw = RawSegment::inRandomOrder()->first();
         $station = $raw->station;
         $user = User::inRandomOrder()->first();
-
-        // deviasi anotasi manusia (±0.2 detik)
-        $start = max(0, $raw->start_time + $this->faker->randomFloat(3, -0.2, 0.2));
-        $end = $raw->end_time + $this->faker->randomFloat(3, -0.2, 0.2);
-
-        // pastikan end > start
-        if ($end <= $start) {
-            $end = $start + 0.1;
-        }
-
-        $duration = $end - $start;
+        $startTime = $this->faker->randomFloat(2, 0, 300); // mulai antara 0–300 detik
+        $endTime = $startTime + $this->faker->randomFloat(2, 5, 60); // durasi minimal 5 detik
+        $duration = $endTime - $startTime;
 
         return [
-
             'station_id' => $station->id,
             'user_id' => $user->id,
-            'raw_id' => $raw->id,
+            'activity' => $raw->activity,
             'input_at' => now()->subMinutes(rand(1, 120)),
-            'start_time' => $start,
-            'end_time' => $end,
-            'duration' => $duration,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'duration' => $duration, // sesuai rumus end_time - start_time
             'catatan' => $this->faker->optional()->randomElement([
                 'Perlu dicek ulang frame',
                 'Gerakan operator kurang jelas',
@@ -70,4 +81,5 @@ class GroundTruthFactory extends Factory
             ]),
         ];
     }
+
 }

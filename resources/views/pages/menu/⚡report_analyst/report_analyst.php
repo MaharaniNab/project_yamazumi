@@ -11,6 +11,7 @@ use Livewire\Component;
 new
     #[Title('Report Analyst')] class extends Component {
     public $taktTime;
+    public $n_stations;
     public $operators;
     public $target;
 
@@ -38,6 +39,7 @@ new
         $this->taktTime = $job->takt_time;
         $this->operators = $job->n_stations;
         $this->target = $job->output_harian;
+        $this->n_stations = $job->n_stations;
 
         // Ambil data stasiun langsung dari DB
         $stations = StationResult::where('job_id', $job->id)
