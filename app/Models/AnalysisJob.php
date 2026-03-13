@@ -27,4 +27,6 @@ class AnalysisJob extends Model
     {
         return $this->hasMany(SimulationResult::class, 'job_id', 'id');
     }
+
+    
 }

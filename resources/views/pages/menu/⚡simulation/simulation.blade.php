@@ -1,62 +1,74 @@
 <div class="flex flex-col gap-6">
-    <div class="flex items-start justify-between w-full">
-        <div>
+    <div class="space-y-4">
+        <div class="space-y-1">
             <flux:heading size="lg" class="font-semibold">
                 Simulasi Kaizen Balancing
-                <flux:subheading class="text-sm text-neutral-500 mt-1">
-                    <div class="flex space-x-1">
-                        <span>3 - Phase Algorithm</span>
-                        <span>·</span>
-                        <span>NVA Eliminasi 100%</span>
-                        <span>·</span>
-                        <span>MP Rebalancing (Constraint: Σ MP = MP Aktual)</span>
-                    </div>
+                <flux:subheading class="text-sm text-neutral-500">
+                    Optimasi line menggunakan pendekatan multi-phase balancing
                 </flux:subheading>
             </flux:heading>
+
+            {{-- Algorithm Info --}}
+            <div class="flex flex-wrap gap-2 mt-1">
+                <flux:badge color="zinc" size="sm">
+                    3-Phase Algorithm
+                </flux:badge>
+                <flux:badge color="emerald" size="sm">
+                    NVA Eliminasi 100%
+                </flux:badge>
+                <flux:badge color="blue" size="sm">
+                    MP Rebalancing
+                </flux:badge>
+                <flux:badge color="amber" size="sm">
+                    Σ MP = MP Aktual
+                </flux:badge>
+            </div>
         </div>
 
-        {{-- KPI Cards sejajar --}}
-        <div class="flex flex-wrap gap-3">
-            @foreach ($this->kpis as $kpi)
-                @php
-                    $color = match ($kpi['color']) {
-                        'amber' => 'text-amber-500 bg-amber-50 !border-amber-500',
-                        'emerald' => 'text-emerald-500 bg-emerald-50 !border-emerald-500',
-                        'blue' => 'text-blue-500 bg-blue-50 !border-blue-500',
-                        default => 'text-slate-500 bg-slate-50 !border-slate-500'
-                    };
-                @endphp
 
-                <flux:card
-                    class="px-3 py-2 min-w-[150px] flex flex-col items-center justify-center text-center 
-                                                                                                                                                                                                       !border {{ $color }}">
-                    <div class="text-[11px] font-medium uppercase">
-                        {{ $kpi['label'] }}
-                    </div>
-                    @if ($kpi['unit'] !== 'Op')
-                        <div class="flex items-center justify-center">
-                            <span class="text-lg font-bold">
+        {{-- KPI CARDS --}}
+        <div class="flex items-center justify-between">
+            <div class="flex items-end gap-2">
+                <flux:button wire:click="exportExcel" icon="cloud-arrow-down" variant="primary">
+                    Export Excel
+                </flux:button>
+            </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                @foreach ($this->kpis as $kpi)
+                    @php
+                        $color = match ($kpi['color']) {
+                            'amber' => 'text-amber-500 bg-amber-50 !border-amber-500',
+                            'emerald' => 'text-emerald-500 bg-emerald-50 !border-emerald-500',
+                            'blue' => 'text-blue-500 bg-blue-50 !border-blue-500',
+                            default => 'text-slate-500 bg-slate-50 !border-slate-500'
+                        };
+                    @endphp
+
+                    <flux:card class="px-4 py-2 flex flex-col items-center text-center rounded-xl shadow-sm
+                                    transition hover:-translate-y-1 duration-300 !border {{ $color }}">
+                        <div class="text-[11px] uppercase tracking-wide opacity-80">
+                            {{ $kpi['label'] }}
+                        </div>
+
+                        <div class="flex items-end gap-1">
+                            <span class="text-xl font-bold">
                                 {{ $kpi['value'] }}
                             </span>
-                            <span class="text-sm font-medium opacity-70">
+
+                            <span class="text-sm opacity-70">
                                 {{ $kpi['unit'] }}
                             </span>
+
                         </div>
-                    @else
-                        <div class="flex items-center gap-1 justify-center">
-                            <span class="text-lg font-bold">
-                                {{ $kpi['value'] }}
-                            </span>
-                            <span class="text-sm font-medium opacity-70">
-                                {{ $kpi['unit'] }}
-                            </span>
-                        </div>
-                    @endif
-                </flux:card>
-            @endforeach
+
+                    </flux:card>
+
+                @endforeach
+            </div>
         </div>
+
     </div>
-
     {{-- MAIN GRID --}}
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-3 overflow-hidden">
@@ -159,17 +171,17 @@
                 </flux:subheading>
             </flux:heading>
 
-            <div class="border-t pt-4 space-y-6">
+            <div class="border-t pt-4 space-y-4">
                 @foreach($this->kaizen->groupBy('priority') as $priority => $actions)
                     @php
                         $first = $actions->first();
                     @endphp
 
-                    <div class="flex items-center gap-2 text-xs font-mono text-neutral-500">
-                        <span class="text-red-500">●</span>
+                    <!-- Header per Priority -->
+                    <div class="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-300">
+                        <flux:icon.chevron-right variant="micro" color="red" />
                         <span class="tracking-wider">
-                            PRIORITAS {{ $priority }} –
-                            {{ strtoupper($first['station']) }}
+                            PRIORITAS {{ $priority }} – {{ strtoupper($first['elemen']) }}
                         </span>
                         <span class="text-red-500 font-semibold">
                             {{ strtoupper($first['status']) }}
@@ -177,40 +189,44 @@
                         <span>
                             CV {{ number_format($first['cv'], 1) }}%
                         </span>
+                        <span>·</span>
+                        @if($first['nva_dominant'] !== 1)
+                            <span>
+                                NVA {{ $first['nvaPct'] }}
+                            </span>
+                        @else
+                            <flux:badge size="sm" color="red">
+                                NVA-Dom {{ $first['nvaPct'] }}
+                            </flux:badge>
+                        @endif
                     </div>
 
-                    {{-- Actions --}}
+                    <!-- Actions -->
                     <div class="space-y-3">
                         @foreach($actions as $act)
-                            <flux:card class="border-l-4 !border-amber-400 pl-4 py-3 bg-slate-50 dark:bg-neutral-900">
+                            <flux:card class="border-l-4 !border-amber-400 pl-4 py-3 dark:bg-neutral-900">
                                 <div class="flex items-start gap-3">
-                                    <flux:badge size="sm" color="{{ $act['kategori'] == 'NVA' ? 'red' : 'yellow' }}">
+                                    <flux:badge size="sm"
+                                        color="{{ $act['kategori'] == 'NVA' ? 'red' : ($act['kategori'] == 'VA' ? 'green' : 'yellow') }}">
                                         {{ $act['kategori'] }}
                                     </flux:badge>
+
                                     <div class="flex-1">
+                                        <!-- Task + Metode -->
                                         <div class="font-semibold text-sm">
                                             {{ $act['task'] }}
                                             <span class="text-xs text-neutral-400 ml-1">
-                                                {{ $act['pct'] }}
+                                                {{ $act['pct'] }} ({{ $act['metode'] }})
                                             </span>
                                         </div>
 
-                                        <div class="text-xs font-mono text-neutral-500 mt-1">
+                                        <!-- Before → After -->
+                                        <div class="flex items-center gap-1 text-xs text-neutral-500">
                                             {{ $act['before'] }}s
                                             <flux:icon.arrow-long-right variant="micro" />
-                                            <span class="text-green-600 font-semibold">
-                                                {{ $act['after'] }}s
-                                            </span>
-                                            <span class="text-green-600 ml-2">
-                                                (-{{ $act['saving'] }}s saved)
-                                            </span>
+                                            <span class="text-green-600 font-semibold">{{ $act['after'] }}s</span>
+                                            <span class="text-green-600 ml-2">(-{{ $act['saving'] }}s saved)</span>
                                         </div>
-
-                                        @if($act['metode'])
-                                            <div class="text-xs text-neutral-400 mt-1">
-                                                {{ $act['metode'] }}
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                             </flux:card>
@@ -258,7 +274,7 @@
                         };
                     @endphp
 
-                    <flux:card class="px-4 py-3 bg-bg-white dark:bg-neutral-700 shadow-sm">
+                    <flux:card class="px-4 py-3 bg-bg-white dark:bg-neutral-900 shadow-sm">
                         <div class="flex justify-between items-center mb-1">
                             <div class="text-sm font-semibold">
                                 {{ $el['station_name'] }}
@@ -298,7 +314,7 @@
                     @foreach ($this->balancing as $kpi)
                         @php
                             $color = match ($kpi['color']) {
-                                'red' => 'text-red-500 bg-red-50 !border-red-500',
+                                'amber' => 'text-amber-500 bg-amber-50 !border-amber-500',
                                 'green' => 'text-green-500 bg-green-50 !border-green-500',
                                 'cyan' => 'text-cyan-500 bg-cyan-50 !border-cyan-500',
                                 default => 'text-slate-500 bg-slate-50 !border-slate-500',
@@ -307,7 +323,7 @@
 
                         <flux:card
                             class="flex-1 px-3 py-2 flex flex-col items-center justify-center text-center
-                                                                                                               border {{ $color }}">
+                                                                                                                                                                           border {{ $color }}">
                             <div class="text-[11px] font-medium uppercase">
                                 {{ $kpi['label'] }}
                             </div>
@@ -402,8 +418,7 @@
             <flux:table.rows>
                 @foreach($this->elementsData as $el)
                     <flux:table.row
-                        class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition 
-                                                                                                                                                   odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
+                        class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
                         <flux:table.cell class="!font-medium !px-4">{{ $el['station_name'] }}</flux:table.cell>
                         <flux:table.cell align="center">{{ number_format($el['ct_before'], 1) }}s</flux:table.cell>
                         <flux:table.cell align="center">{{ number_format($el['ct_after'], 1) }}s</flux:table.cell>
@@ -529,11 +544,9 @@
             }
 
         };
-
         new ApexCharts(
             document.querySelector("#comparisonChart"),
             comparisonOptions
         ).render();
-
     });
 </script>

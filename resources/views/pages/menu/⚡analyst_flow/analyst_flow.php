@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 new
-#[Title('Setup Analyst')]
-class extends Component {
+    #[Title('Setup Analyst')]
+    class extends Component {
 
     use WithFileUploads;
 
@@ -20,6 +20,7 @@ class extends Component {
     public $output_harian;
     public $brand;
     public $style;
+    public $mp_aktual;
 
     public $file_list = [];
     public $station_name = [];
@@ -33,6 +34,7 @@ class extends Component {
         'style' => 'nullable|string|max:100',
         'brand' => 'nullable|string|max:100',
         'output_harian' => 'required|integer|min:1',
+        'mp_aktual' => 'required|integer|min:1',
 
         'file_list.*' => 'required|file|mimes:mp4,avi,mov,mkv,mts|max:204800',
         'station_name.*' => 'required|string|max:100',
@@ -79,7 +81,8 @@ class extends Component {
 
     public function getTaktTimeProperty()
     {
-        if (!$this->output_harian) return null;
+        if (!$this->output_harian)
+            return null;
 
         $seconds = $this->effectiveHours * 3600;
 
@@ -94,8 +97,13 @@ class extends Component {
 
     public function save()
     {
-
         $this->validate();
+
+        $jamKerjaDetik = $this->effectiveHours * 3600;
+
+        $taktTime = $this->output_harian
+            ? round($jamKerjaDetik / $this->output_harian, 2)
+            : null;
 
         $job = AnalysisJob::create([
 
@@ -107,10 +115,10 @@ class extends Component {
             'brand' => $this->brand,
 
             'output_harian' => $this->output_harian,
+            'mp_aktual' => (int) $this->mp_aktual,
 
-            'jam_kerja_detik' => $this->effectiveHours * 3600,
-
-            'takt_time' => $this->taktTime,
+            'jam_kerja_detik' => $jamKerjaDetik,
+            'takt_time' => $taktTime,
 
             'n_stations' => count($this->file_list),
 
@@ -122,11 +130,8 @@ class extends Component {
             $name = $this->station_name[$i];
 
             $file->storeAs(
-
                 "analisis_videos/$job->id",
-
                 $name . '.' . $file->getClientOriginalExtension(),
-
                 'public'
             );
         }

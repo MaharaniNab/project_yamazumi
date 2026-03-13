@@ -15,7 +15,6 @@
         </div>
         <flux:date-picker mode="range" with-presets wire:model.live="range" class="w-64" />
         <flux:select wire:model.live="selectedLine" class="w-64">
-            <flux:select.option value="">Semua Lini</flux:select.option>
             @foreach($lines as $line)
                 <flux:select.option value="{{ $line }}">
                     {{ $line }}

@@ -70,4 +70,9 @@ class User extends Authenticatable
     {
         return $this->roles->first()?->name;
     }
+
+    public function isActive(): bool
+    {
+        return (bool) $this->is_active;
+    }
 }

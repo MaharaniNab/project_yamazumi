@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\SimulationExport;
 use App\Models\AnalysisJob;
 use App\Models\SimulationResult;
 use App\Models\SimulationStation;
@@ -7,7 +8,9 @@ use App\Models\SimulationAction;
 use App\Models\StationResult;
 use App\Models\WorkElement;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Title;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 new
     #[Title('Simulation')]
@@ -15,6 +18,7 @@ new
 
     public $simulation;
     public $job;
+    public $simulationStations;
 
     // Properti dasar
     public $taktTime;
@@ -49,9 +53,8 @@ new
         $this->mpAktual = $st->mp_aktual_input;
         $this->mpBalance = $st->overall_mp_balance;
         // ambil semua station untuk hitung total assigned
-        $stations = SimulationStation::where('simulation_id', $st->id)->get();
-        $this->mpAssigned = $stations->sum('mp_assigned');
-
+        $this->simulationStations = SimulationStation::where('simulation_id', $st->id)->get();
+        $this->mpAssigned = $this->simulationStations->sum('mp_assigned');
 
         // dd($this->elementsData());
     }
@@ -97,17 +100,14 @@ new
             return [];
         }
 
-        // Ambil semua stasiun dari simulasi
-        $stations = SimulationStation::where('simulation_id', $this->simulation->id)->get();
-        $this->mpAssigned = $stations->sum('mp_assigned');
-
+        $this->mpAssigned = $this->simulationStations->sum('mp_assigned');
 
         return [
             [
                 'label' => 'MP Aktual',
                 'value' => $this->mpAktual,
                 'unit' => 'Op',
-                'color' => 'red',
+                'color' => 'amber',
                 'note' => 'input pengguna',
             ],
             [
@@ -162,8 +162,7 @@ new
             return [];
 
         $stationsBefore = StationResult::where('job_id', $this->job->id)->orderBy('station_order')->get();
-        $stationsAfter = SimulationStation::where('simulation_id', $this->simulation->id)->orderBy('station_name')->get();
-
+        $stationsAfter = $this->simulationStations->sortBy('station_name');
         return [
             'stations' => $stationsBefore->pluck('station_name')->toArray(),
             'beforeData' => $stationsBefore->pluck('mean_ct')->map(fn($v) => round($v, 2))->toArray(),
@@ -176,23 +175,30 @@ new
         if (!$this->simulation) {
             return collect();
         }
-
         return SimulationAction::where('simulation_id', $this->simulation->id)
             ->orderBy('priority_order')
             ->get()
-            ->map(fn($a) => [
-                'priority' => $a->priority_order,
-                'station' => $a->station_from,
-                'status' => $a->status_stasiun,
-                'cv' => $a->cv_stasiun,
-                'task' => $a->elemen_kerja,
-                'kategori' => $a->kategori_va,
-                'before' => round($a->durasi_before, 1),
-                'after' => round($a->durasi_after, 1),
-                'saving' => round($a->saving, 1),
-                'pct' => $a->pct_reduksi,
-                'metode' => $a->metode,
-            ]);
+            ->map(function ($a) {
+
+                $station = $this->simulationStations
+                    ->firstWhere('station_name', $a->station_from);
+
+                return [
+                    'priority' => $a->priority_order,
+                    'elemen' => $a->station_from,
+                    'status' => $a->status_stasiun,
+                    'cv' => $a->cv_stasiun,
+                    'task' => $a->elemen_kerja,
+                    'kategori' => $a->kategori_va,
+                    'before' => round($a->durasi_before, 1),
+                    'after' => round($a->durasi_after, 1),
+                    'saving' => round($a->saving, 1),
+                    'pct' => $a->pct_reduksi,
+                    'nvaPct' => $station?->nva_pct_before * 100 . '%',
+                    'nva_dominant' => $station?->is_nva_dominant,
+                    'metode' => $a->metode,
+                ];
+            });
     }
 
     #[Computed]
@@ -202,8 +208,7 @@ new
             return [];
         }
 
-        $stations = SimulationStation::where('simulation_id', $this->simulation->id)->get();
-
+        $stations = $this->simulationStations;
         return $stations->map(fn($s) => [
             'station_name' => $s->station_name,
             'ct_before' => $s->mean_ct_before,
@@ -217,5 +222,24 @@ new
             'nvaPctBefore' => $s->nva_pct_before,
             'nvaDOM' => $s->is_nva_dominant,
         ])->toArray();
+    }
+
+    public function exportExcel()
+    {
+        $data = [
+            'kpis' => $this->kpis,
+            'metrics' => $this->metrics,
+            'chartData' => $this->chartData,
+            'elementsData' => $this->elementsData,
+            'balancing' => $this->balancing,
+            'mpAktual' => $this->mpAktual,
+            'mpAssigned' => $this->mpAssigned,
+            'mpBalance' => $this->mpBalance,
+        ];
+
+        return Excel::download(
+            new SimulationExport($data),
+            'kaizen-balancing-report.xlsx'
+        );
     }
 };

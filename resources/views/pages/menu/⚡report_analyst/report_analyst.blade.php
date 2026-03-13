@@ -12,18 +12,27 @@
                 </flux:subheading>
             </flux:heading>
         </div>
+        <div class="flex items-center gap-2 justify-end">
+            <div class="flex gap-2">
+                <flux:badge size="sm" class="text-xs" icon="exclamation-triangle" variant="micro" color="red">
+                    {{ $bottleneckCount }} Bottleneck Aktif
+                </flux:badge>
 
-        <div class="flex gap-2">
-            <flux:badge size="sm" rounded icon="exclamation-triangle" variant="micro" color="red">
-                {{ $bottleneckCount }} Bottleneck Aktif
-            </flux:badge>
+                <flux:badge size="sm" class="text-xs" icon="exclamation-triangle" variant="micro" color="amber">
+                    High Risk Statio {{ number_format($this->maxCV, 1) }}%
+                </flux:badge>
+            </div>
+            <div class="flex items-center gap-2 justify-end">
+                <flux:button wire:click="startSimulation" icon="clock" variant="primary">
+                    Mulai Simulasi
+                </flux:button>
 
-            <flux:badge size="sm" rounded icon="exclamation-triangle" variant="micro" color="amber">
-                High Risk Statio {{ number_format($this->maxCV, 1) }}%
-            </flux:badge>
+                <flux:button wire:click="export" icon="cloud-arrow-down" variant="primary" color="blue">
+                    Export Data
+                </flux:button>
+            </div>
         </div>
     </div>
-
 
     {{-- KPI GRID --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -72,9 +81,9 @@
     </div>
 
     {{-- MAIN GRID --}}
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 xl:grid-cols-6 gap-6">
         {{-- CHART --}}
-        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-3">
+        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-4">
             <flux:heading size="md" class="mb-4 font-semibold">
                 Cycle Time per Stasiun
                 <flux:subheading class="flex items-center text-xs text-neutral-500 space-x-2">
@@ -92,7 +101,7 @@
         </flux:card>
 
         {{-- STATION STATUS --}}
-        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm">
+        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-2">
             <flux:heading size="md" class="mb-4 font-semibold">
                 Ringkasan Variabilitas
                 <flux:subheading class="flex items-center text-xs text-neutral-500 space-x-2">
@@ -161,8 +170,8 @@
                                 </div>
                             </flux:table.cell>
 
-                            <flux:table.cell align="center" size="sm" class="!px-4">
-                                <flux:badge color="{{ $color }}">
+                            <flux:table.cell align="center" size="sm">
+                                <flux:badge size="sm" color="{{ $color }}" class="text-xs">
                                     {{ $status }}
                                 </flux:badge>
                             </flux:table.cell>

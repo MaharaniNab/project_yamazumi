@@ -49,156 +49,165 @@
 
     {{-- MAIN CONTENT --}}
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div class="flex flex-col gap-4">
-            <flux:heading size="md" class="font-semibold mb-4">
-                Skor IoU per Aktivitas
-                <flux:subheading class="text-sm text-neutral-500">
-                    Perbandingan output CV vs ground truth stopwatch manual
-                </flux:subheading>
-            </flux:heading>
-            <flux:table container:class="max-h-[60vh]">
-                <flux:table.columns sticky class="font-medium bg-gray-100 dark:bg-neutral-700">
-                    <flux:table.column align="center" class="!px-4">Stasiun</flux:table.column>
-                    <flux:table.column align="center">Aktivitas</flux:table.column>
-                    <flux:table.column align="center">N-PRED</flux:table.column>
-                    <flux:table.column align="center">N-GT</flux:table.column>
-                    <flux:table.column align="center">IoU Score</flux:table.column>
-                    <flux:table.column align="center" class="!px-4">Status</flux:table.column>
-                </flux:table.columns>
+        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
+            <div class="flex flex-col">
+                <flux:heading size="md" class="font-semibold mb-4">
+                    Skor IoU per Aktivitas
+                    <flux:subheading class="text-sm text-neutral-500">
+                        Perbandingan output CV vs ground truth stopwatch manual
+                    </flux:subheading>
+                </flux:heading>
+                <div class="pt-6 border-t"></div>
 
-                <flux:table.rows>
-                    @foreach($this->iouResults as $row)
-                        @php
-                            $color =
-                                $row->avg_iou >= 0.70 ? 'green' :
-                                ($row->avg_iou >= 0.50 ? 'yellow' : 'red');
-                            $status =
-                                $row->avg_iou >= 0.70 ? 'Baik' :
-                                ($row->avg_iou >= 0.50 ? 'Cukup' : 'Perlu Perbaikan');
-                        @endphp
+                <flux:table container:class="max-h-[60vh]">
+                    <flux:table.columns sticky class="font-medium bg-gray-100 dark:bg-neutral-700">
+                        <flux:table.column align="center" class="!px-4">Stasiun</flux:table.column>
+                        <flux:table.column align="center">Aktivitas</flux:table.column>
+                        <flux:table.column align="center">N-PRED</flux:table.column>
+                        <flux:table.column align="center">N-GT</flux:table.column>
+                        <flux:table.column align="center">IoU Score</flux:table.column>
+                        <flux:table.column align="center" class="!px-4">Status</flux:table.column>
+                    </flux:table.columns>
 
-                        <flux:table.row
-                            class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition
-                                                                                odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
-                            <flux:table.cell align="center" class="!font-semibold">
-                                {{ $row->station->station_name }}
-                            </flux:table.cell>
+                    <flux:table.rows>
+                        @foreach($this->iouResults as $row)
+                            @php
+                                $color =
+                                    $row->avg_iou >= 0.70 ? 'green' :
+                                    ($row->avg_iou >= 0.50 ? 'yellow' : 'red');
+                                $status =
+                                    $row->avg_iou >= 0.70 ? 'Baik' :
+                                    ($row->avg_iou >= 0.50 ? 'Cukup' : 'Perlu Perbaikan');
+                            @endphp
 
-                            <flux:table.cell align="center" class="font-medium">
-                                {{ $row->activity }}
-                            </flux:table.cell>
+                            <flux:table.row
+                                class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition
+                                                                                                odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
+                                <flux:table.cell align="center" class="!font-semibold">
+                                    {{ $row->station->station_name }}
+                                </flux:table.cell>
 
-                            <flux:table.cell align="center">
-                                {{ $row->n_samples_pred }}
-                            </flux:table.cell>
+                                <flux:table.cell align="center" class="font-medium">
+                                    {{ $row->activity }}
+                                </flux:table.cell>
 
-                            <flux:table.cell align="center">
-                                {{ $row->n_samples_gt }}
-                            </flux:table.cell>
+                                <flux:table.cell align="center">
+                                    {{ $row->n_samples_pred }}
+                                </flux:table.cell>
 
-                            <flux:table.cell align="center">
-                                <div class="flex flex-col items-center gap-1">
-                                    <span class="font-semibold w-12">
-                                        {{ number_format($row->avg_iou, 3) }}
-                                    </span>
-                                    <div class="w-32 h-2 bg-gray-200 dark:bg-neutral-700 rounded-full">
-                                        <div class="h-2 rounded-full bg-{{ $color }}-500 transition-all duration-500"
-                                            style="width: {{ $row->avg_iou * 100 }}%">
+                                <flux:table.cell align="center">
+                                    {{ $row->n_samples_gt }}
+                                </flux:table.cell>
+
+                                <flux:table.cell align="center">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span class="font-semibold w-12">
+                                            {{ number_format($row->avg_iou, 3) }}
+                                        </span>
+                                        <div class="w-32 h-2 bg-gray-200 dark:bg-neutral-700 rounded-full">
+                                            <div class="h-2 rounded-full bg-{{ $color }}-500 transition-all duration-500"
+                                                style="width: {{ $row->avg_iou * 100 }}%">
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </flux:table.cell>
+                                </flux:table.cell>
 
-                            <flux:table.cell align="center">
-                                <flux:badge color="{{ $color }}" size="sm">
-                                    {{ $status }}
-                                </flux:badge>
-                            </flux:table.cell>
+                                <flux:table.cell align="center">
+                                    <flux:badge color="{{ $color }}" size="sm">
+                                        {{ $status }}
+                                    </flux:badge>
+                                </flux:table.cell>
 
-                        </flux:table.row>
+                            </flux:table.row>
 
-                    @endforeach
+                        @endforeach
 
-                </flux:table.rows>
+                    </flux:table.rows>
+                </flux:table>
+        </flux:card>
+    </div>
 
-            </flux:table>
-        </div>
+    {{-- INPUT GROUND TRUTH --}}
+    <flux:card class="bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
+        <flux:heading size="md" class="font-semibold mb-4">
+            Input Ground Truth
+            <flux:subheading class="text-sm text-neutral-500">
+                Masukkan data stopwatch manual
+            </flux:subheading>
+        </flux:heading>
+        <div class="pt-6 border-t"></div>
 
-        {{-- INPUT GROUND TRUTH --}}
-        <flux:card class="bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
-            <flux:heading size="md" class="font-semibold mb-4">
-                Input Ground Truth
-                <flux:subheading class="text-sm text-neutral-500">
-                    Masukkan data stopwatch manual
-                </flux:subheading>
-            </flux:heading>
-            <div class="pt-6 border-t"></div>
-
-            <flux:select wire:model="selectedStation" class="mb-5 w-full">
-                <flux:select.option value="">
-                    Pilih Stasiun
+        <flux:select label="Pilih Stasiun" variant="combobox" wire:model="selectedStation" class="w-full" required>
+            <flux:select.option value="">
+                - Semua Stasiun -
+            </flux:select.option>
+            @foreach($stations as $station)
+                <flux:select.option value="{{ $station->id }}">
+                    {{ $station->station_name }}
                 </flux:select.option>
-                @foreach($stations as $station)
-                    <flux:select.option value="{{ $station->id }}">
-                        {{ $station->station_name }}
-                    </flux:select.option>
-                @endforeach
-            </flux:select>
+            @endforeach
+        </flux:select>
+        @error('selectedStation')
+            <span class="text-red-500 text-xs">
+                {{ $message }}
+            </span>
+        @enderror
 
-            {{-- INPUT SEGMENTS --}}
-            <div class="mt-4 space-y-4">
-                @foreach($segments as $i => $segment)
-                    <div class="grid grid-cols-12 gap-3 items-end" wire:key="segment-{{ $i }}">
-                        <div class="col-span-5 space-y-1">
-                            <flux:input label="Aktivitas" class="w-full" wire:model="segments.{{ $i }}.activity"
-                                placeholder="Nama aktivitas" />
+        {{-- INPUT SEGMENTS --}}
+        <div class="mt-4 space-y-4">
+            @foreach($segments as $i => $segment)
+                <div class="grid grid-cols-12 gap-3 items-end" wire:key="segment-{{ $i }}">
+                    <div class="col-span-5 space-y-1">
+                        <flux:input label="Aktivitas" class="w-full" wire:model="segments.{{ $i }}.activity"
+                            placeholder="Nama aktivitas" />
 
-                            @error("segments.$i.activity")
-                                <span class="text-red-500 text-xs">
-                                    {{ $message }}
-                                </span>
-                            @enderror
-                        </div>
+                        @error("segments.$i.activity")
+                            <span class="text-red-500 text-xs">
+                                {{ $message }}
+                            </span>
+                        @enderror
+                    </div>
 
-                        <div class="col-span-3 space-y-1">
-                            <flux:input label="Start (s)" class="w-full" wire:model="segments.{{ $i }}.start"
-                                placeholder="0" />
-                            @error("segments.$i.start")
-                                <span class="text-red-500 text-xs">
-                                    {{ $message }}
-                                </span>
-                            @enderror
-                        </div>
+                    <div class="col-span-3 space-y-1">
+                        <flux:input type="number" label="Start (s)" class="w-full" wire:model="segments.{{ $i }}.start"
+                            placeholder="0" />
+                        @error("segments.$i.start")
+                            <span class="text-red-500 text-xs">
+                                {{ $message }}
+                            </span>
+                        @enderror
+                    </div>
 
-                        <div class="col-span-3 space-y-1">
-                            <flux:input label="End (s)" class="w-full" wire:model="segments.{{ $i }}.end" placeholder="5" />
-                            @error("segments.$i.end")
-                                <span class="text-red-500 text-xs">
-                                    {{ $message }}
-                                </span>
-                            @enderror
-                        </div>
+                    <div class="col-span-3 space-y-1">
+                        <flux:input type="number" label="End (s)" class="w-full" wire:model="segments.{{ $i }}.end"
+                            placeholder="5" />
+                        @error("segments.$i.end")
+                            <span class="text-red-500 text-xs">
+                                {{ $message }}
+                            </span>
+                        @enderror
+                    </div>
 
-                        <div class="col-span-1 flex justify-center pb-1">
+                    <div class="col-span-1 flex justify-center pb-1">
 
-                            <flux:button wire:click="removeSegment({{ $i }})" variant="ghost" size="sm" color="red">
-                                <flux:icon.x-mark variant="mini" />
-                            </flux:button>
-
-                        </div>
+                        <flux:button wire:click="removeSegment({{ $i }})" variant="ghost" size="sm" color="red">
+                            <flux:icon.x-mark variant="mini" />
+                        </flux:button>
 
                     </div>
 
-                @endforeach
-            </div>
-            <div class="flex flex-col gap-4 mt-8">
-                <flux:button wire:click="addSegment" variant="outline" variant="filled" icon="plus">
-                    Tambah Segmen
-                </flux:button>
-                <flux:button wire:click="calculateIoU" variant="primary" color="blue" icon="calculator">
-                    Hitung IoU
-                </flux:button>
-            </div>
-        </flux:card>
-    </div>
+                </div>
+
+            @endforeach
+        </div>
+        <div class="flex flex-col gap-4 mt-8">
+            <flux:button wire:click="addSegment" variant="outline" variant="filled" icon="plus">
+                Tambah Segmen GT
+            </flux:button>
+            <flux:button wire:click="calculateIoU" variant="primary" color="blue" icon="calculator">
+                Simpan & Hitung IoU
+            </flux:button>
+        </div>
+    </flux:card>
+</div>
 </div>

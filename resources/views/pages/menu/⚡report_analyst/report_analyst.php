@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\LineAnalysisExport;
 use App\Models\AnalysisJob;
 use App\Models\SimulationResult;
 use App\Models\SimulationStation;
@@ -7,6 +8,7 @@ use App\Models\StationResult;
 use App\Models\WorkElement;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 new
     #[Title('Report Analyst')] class extends Component {
@@ -91,16 +93,6 @@ new
         $this->bottleneckCount = $stations->where('status_station', 'Bottleneck')->count();
         $this->maxCV = $stations->max('cv_persen');
 
-        // Ambil elemen kerja bottleneck tertinggi
-        $highestBottleneck = StationResult::where('job_id', $job->id)
-            ->where('status_station', 'Bottleneck')
-            ->orderByDesc('mean_ct')
-            ->first();
-
-        $this->elements = $highestBottleneck
-            ? WorkElement::where('station_id', $highestBottleneck->id)->get()
-            : collect();
-
         // Ambil semua work elements per stasiun
         $this->elementsData = [];
         foreach ($stations as $station) {
@@ -108,5 +100,27 @@ new
                 ->get();
             $this->elementsData[$station->station_name] = $elements;
         }
+    }
+
+    public function export()
+    {
+        $data = [
+            'kpis' => $this->kpis,
+            'stations' => $this->stations,
+            'meanCT' => $this->meanCT,
+            'robustCT' => $this->robustCT,
+            'cvData' => $this->cvData,
+            'elements' => WorkElement::all()
+        ];
+
+        return Excel::download(
+            new LineAnalysisExport($data),
+            'line_analysis.xlsx'
+        );
+    }
+
+    public function startSimulation()
+    {
+        return redirect()->route('menu.simulation');
     }
 };

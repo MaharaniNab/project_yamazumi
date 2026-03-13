@@ -5,9 +5,9 @@
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-white dark:bg-zinc-800 pb-6">
+<body class="min-h-screen bg-white dark:bg-zinc-800">
     <flux:sidebar sticky collapsible
-        class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 z-90 mb-6">
+        class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 z-90">
         <flux:sidebar.header>
             <flux:sidebar.brand name="{{ config('app.name') }}" :href="route('dashboard')">
                 <x-app-logo-icon class="size-6 fill-current text-black dark:text-white" />
@@ -167,7 +167,7 @@
     @fluxScripts
 
     <footer
-        class="fixed z-20 bottom-0 w-full text-end px-6 py-4 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-zinc-800 shadow-inner">
+        class="fixed z-10 bottom-0 w-full text-end px-6 py-4 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-zinc-800 shadow-inner">
         &copy; {{ date('Y') }} PT. Fukuryo Indonesia. All rights reserved.
     </footer>
 </body>

@@ -32,6 +32,29 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+
+        Fortify::authenticateUsing(function (Request $request) {
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return null;
+            }
+
+            // cek apakah akun aktif
+            if (!$user->is_active) {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda tidak aktif. Silakan hubungi administrator.'],
+                ]);
+            }
+
+            // cek password
+            if (Hash::check($request->password, $user->password)) {
+                return $user;
+            }
+
+            return null;
+        });
     }
 
     /**

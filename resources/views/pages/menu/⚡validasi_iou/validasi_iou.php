@@ -7,7 +7,8 @@ use Livewire\Component;
 use Livewire\Attributes\Title;
 use Illuminate\Support\Facades\Auth;
 
-new #[Title('Validasi IOU')] class extends Component {
+new
+    #[Title('Validasi IOU')] class extends Component {
 
     public $kpis = [];
     public $stations = [];
@@ -20,6 +21,14 @@ new #[Title('Validasi IOU')] class extends Component {
             'start' => '',
             'end' => '',
         ]
+    ];
+
+    protected $rules = [
+        'selectedStation' => 'required',
+
+        'segments.*.activity' => 'required|string|max:255',
+        'segments.*.start' => 'required|numeric|min:0',
+        'segments.*.end' => 'required|numeric|gt:segments.*.start',
     ];
 
     public function mount()
@@ -46,7 +55,7 @@ new #[Title('Validasi IOU')] class extends Component {
 
         $needFix = TemporalIouResult::where('avg_iou', '<', 0.5)->count();
         $stationsCount = $this->iouResults->pluck('station_id')->unique()->count();
-        
+
         if ($avg >= 0.70) {
             $statusIoU = '✓ Baik (≥0.70)';
         } elseif ($avg >= 0.50) {
@@ -54,7 +63,7 @@ new #[Title('Validasi IOU')] class extends Component {
         } else {
             $statusIoU = 'Perlu Perbaikan (<0.50)';
         }
-        
+
         $this->kpis = [
 
             [
@@ -103,25 +112,18 @@ new #[Title('Validasi IOU')] class extends Component {
 
     public function calculateIoU()
     {
-        if (!$this->selectedStation)
-            return;
+        $this->validate(); // WAJIB sebelum proses
 
         foreach ($this->segments as $segment) {
-
-            if (!$segment['activity'])
-                continue;
 
             $start = floatval($segment['start']);
             $end = floatval($segment['end']);
 
-            // sementara pred = gt (dummy)
             $predStart = $start;
             $predEnd = $end;
 
             $gtStart = $start;
             $gtEnd = $end;
-
-            // ================= IoU FORMULA =================
 
             $intersection = max(
                 0,
@@ -132,15 +134,11 @@ new #[Title('Validasi IOU')] class extends Component {
 
             $iou = $union > 0 ? $intersection / $union : 0;
 
-            // ================= STATUS =================
-
             $status =
                 $iou >= 0.70 ? 'Baik' :
                 ($iou >= 0.50 ? 'Cukup' : 'Perlu Perbaikan');
 
-
             TemporalIouResult::create([
-
                 'station_id' => $this->selectedStation,
                 'calculated_by' => Auth::id(),
                 'calculated_at' => now(),
@@ -155,12 +153,17 @@ new #[Title('Validasi IOU')] class extends Component {
 
                 'avg_iou' => $iou,
                 'keterangan' => $status
-
             ]);
         }
-        $this->dispatch('swal-toast', icon: 'success', title: 'Berhasil', text: 'IoU berhasil dihitung!');
+
+        $this->dispatch(
+            'swal-toast',
+            icon: 'success',
+            title: 'Berhasil',
+            text: 'IoU berhasil dihitung!'
+        );
+
         $this->iouResults();
         $this->refreshKpi();
     }
-
 };

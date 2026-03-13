@@ -146,7 +146,7 @@ class SimulationStationFactory extends Factory
         return [
             'simulation_id' => $simulation->id,
             'station_name' => $stationName,
-            'priority_order' => $this->faker->numberBetween(0, 5),
+            'priority_order' => $this->faker->numberBetween(1, 5),
             'is_nva_dominant' => $isNvaDominant,
             'nva_pct_before' => $nvaPctBefore,
 

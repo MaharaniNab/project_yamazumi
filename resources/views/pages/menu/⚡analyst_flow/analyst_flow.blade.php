@@ -118,6 +118,21 @@
                         </p>
                     @endif
                 </div>
+
+                <div class="space-y-2">
+                    <flux:input type="number" required label="Jumlah Man Power Aktual (Total Operator di Line)*"
+                        wire:model.defer="mp_aktual" placeholder="5" class:input="!w-64 font-medium" />
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
+                        Isi jumlah operator yang aktual bekerja di line ini saat ini. Digunakan sebagai
+                        constraint pada simulasi <span class="font-medium">Man Power Balancing</span>.
+                        Jika ada stasiun dengan lebih dari 1 operator, tetap masukkan total seluruh operator.
+                    </p>
+                </div>
+                @error('mp_aktual')
+                    <flux:text size="md" class="text-rose-500 mt-1">
+                        {{ $message }}
+                    </flux:text>
+                @enderror
             </div>
         </div>
 

@@ -68,7 +68,7 @@ text-gray-200">
     </div>
 
    <div class="flex-1 flex items-center justify-center p-16 bg-gradient-to-br from-[#0B1628] to-[#10223F] dark:from-[#081221] dark:to-[#050A14]">
-        <div id="loginCard" class="w-full max-w-[380px] transition-all duration-700 animate-pulse text-gray-200">
+        <div id="loginCard" class="w-full max-w-[380px] transition-all duration-700 text-gray-200">
             {{ $slot }}
         </div>
     </div>
