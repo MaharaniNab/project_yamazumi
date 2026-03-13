@@ -10,11 +10,12 @@
 
     <div class="flex items-center space-x-4 mb-3">
         <div class="relative w-full md:w-64">
-            <flux:input icon="magnifying-glass" type="text" wire:model.live.debounce.300ms="searchHeader"
+            <flux:input icon="magnifying-glass" type="text" wire:model.live.debounce.300ms="search"
                 placeholder="Search..." class:input="bg-gray-50 dark:bg-neutral-800 shadow-inner" />
         </div>
         <flux:date-picker mode="range" with-presets wire:model.live="range" class="w-64" />
         <flux:select wire:model.live="selectedLine" class="w-64">
+            <flux:select.option value="">Semua Lini</flux:select.option>
             @foreach($lines as $line)
                 <flux:select.option value="{{ $line }}">
                     {{ $line }}
@@ -23,7 +24,7 @@
         </flux:select>
     </div>
 
-    <flux:table>
+    <flux:table :paginate="$this->jobs">
         <flux:table.columns sticky class="font-medium bg-gray-100 dark:bg-neutral-700">
             <flux:table.column align="center" class="!px-4">#</flux:table.column>
             <flux:table.column>Job / Lini</flux:table.column>
@@ -36,8 +37,9 @@
         </flux:table.columns>
 
         <flux:table.rows>
-            @foreach($this->jobs as $index => $job)
-                <flux:table.row class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
+            @forelse($this->jobs as $index => $job)
+                <flux:table.row
+                    class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
                     <flux:table.cell align="center" class="!px-4">
                         {{ $loop->iteration }}
                     </flux:table.cell>
@@ -57,7 +59,7 @@
                         {{ number_format($job->takt_time, 1) }}
                     </flux:table.cell>
 
-                    <flux:table.cell align="center" >
+                    <flux:table.cell align="center">
                         <div class="flex flex-col items-center gap-1">
                             <span class="text-sm font-semibold">
                                 {{ number_format($job->line_efficiency, 1) }}%
@@ -91,9 +93,13 @@
                         @endif
                     </flux:table.cell>
                 </flux:table.row>
-
-            @endforeach
-
+            @empty
+                <flux:table.row>
+                    <flux:table.cell colspan="8" class="text-center py-8 text-gray-500">
+                        Tidak ada data yang tersedia.
+                    </flux:table.cell>
+                </flux:table.row>
+            @endforelse
         </flux:table.rows>
     </flux:table>
 </div>

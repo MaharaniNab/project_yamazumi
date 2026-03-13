@@ -6,22 +6,34 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 new
     #[Title('Riwayat')]
     class extends Component {
+    use WithPagination;
 
     public $lines = [];
     #[Url]
     public $selectedLine = null;
     #[Url]
-    public $searchHeader = '';
+    public $search = '';
     public $perPage = 10;
-    public DateRange $range;
+    public $range = [];
+
+    public function updated($key)
+    {
+        if (in_array($key, ['search', 'perPage', 'selectedLine', 'range'])) {
+            $this->resetPage();
+        }
+    }
 
     public function mount()
     {
-        $this->range = new DateRange(now()->subMonth(), now());
+        $this->range = [
+            'start' => now()->subMonth()->toDateString(),
+            'end' => now()->toDateString(),
+        ];
         // ambil semua line unik
         $this->lines = AnalysisJob::select('line_name')
             ->distinct()
@@ -29,8 +41,7 @@ new
             ->toArray();
     }
 
-    #[Computed]
-    public function jobs()
+    public function getJobsProperty()
     {
         return AnalysisJob::with('user')
             ->withCount([
@@ -41,14 +52,25 @@ new
             ->when($this->selectedLine, function ($q) {
                 $q->where('line_name', $this->selectedLine);
             })
-            ->when($this->searchHeader, function ($q) {
-                $q->where('line_name', 'like', '%' . $this->searchHeader . '%');
+            ->when($this->search, function ($q) {
+                $q->where(function ($query) {
+                    $query->where('line_name', 'like', '%' . trim($this->search) . '%')
+                        ->orWhereHas('user', function ($user) {
+                            $user->where('name', 'like', '%' . trim($this->search) . '%');
+                        });
+                });
             })
             ->when($this->range, function ($q) {
-                $q->whereBetween('created_at', [
-                    $this->range->start(),
-                    $this->range->end()
-                ]);
+
+                $start = data_get($this->range, 'start');
+                $end = data_get($this->range, 'end');
+
+                if ($start && $end) {
+                    $q->whereBetween('created_at', [
+                        \Carbon\Carbon::parse($start)->startOfDay(),
+                        \Carbon\Carbon::parse($end)->endOfDay(),
+                    ]);
+                }
             })
             ->latest()
             ->paginate($this->perPage);
