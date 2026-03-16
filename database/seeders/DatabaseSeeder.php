@@ -11,7 +11,6 @@ use App\Models\SimulationStation;
 use App\Models\StationResult;
 use App\Models\TemporalIoUResult;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\WorkElement;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -39,7 +38,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'aditya@fukuryo.co.id',
             'birth_date' => $birthAditya,
             'password' => Hash::make(
-                Carbon::parse($birth)->format('dmY')
+                Carbon::parse($birthAditya)->format('dmY')
             ),
         ]);
 
@@ -121,40 +120,6 @@ class DatabaseSeeder extends Seeder
                 }
             }
         }
-        // $jobs = $users->map(fn($user) => AnalysisJob::factory()->create([
-        //     'user_id' => $user->id,
-        // ]));
-
-        // // StationResult + anak-anaknya
-        // $jobs->each(function ($job) {
-        //     $stations = StationResult::factory()->count(5)->create([
-        //         'job_id' => $job->id,
-        //     ]);
-
-        //     $stations->each(function ($station) {
-        //         WorkElement::factory()->count(3)->create(['station_id' => $station->id]);
-        //         RawSegment::factory()->count(3)->create(['station_id' => $station->id]);
-        //         GroundTruth::factory()->count(2)->create(['station_id' => $station->id]);
-        //         TemporalIoUResult::factory()->count(2)->create(['station_id' => $station->id]);
-        //     });
-
-        //     // SimulationResult + anak-anaknya
-        //     $simulations = SimulationResult::factory()->count(2)->create([
-        //         'job_id' => $job->id,
-        //     ]);
-
-        //     $simulations->each(function ($simulation) {
-        //         $simStations = SimulationStation::factory()->count(3)->create([
-        //             'simulation_id' => $simulation->id,
-        //         ]);
-
-        //         $simStations->each(function ($simStation) use ($simulation) {
-        //             SimulationAction::factory()->count(4)->create([
-        //                 'simulation_id' => $simulation->id,
-        //             ]);
-        //         });
-        //     });
-        // });
 
         $this->call([
             MenuSeeder::class,

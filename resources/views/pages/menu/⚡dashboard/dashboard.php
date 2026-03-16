@@ -30,6 +30,7 @@ new
 
     public function mount()
     {
+        $this->authorize('read_dashboard');
         if (!auth()->check() || !auth()->user()->isActive()) {
             abort(403, 'Akun Anda tidak aktif.');
         }

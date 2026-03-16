@@ -23,7 +23,7 @@
             @endforeach
         </flux:select>
     </div>
-
+    
     <flux:table :paginate="$this->jobs">
         <flux:table.columns sticky class="font-medium bg-gray-100 dark:bg-neutral-700">
             <flux:table.column align="center" class="!px-4">#</flux:table.column>
