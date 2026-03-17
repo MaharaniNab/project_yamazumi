@@ -19,7 +19,16 @@ new
     #[Url]
     public $search = '';
     public $perPage = 10;
-    public $range = [];
+    #[Url]
+    public $startDate = null;
+    #[Url]
+
+    public $endDate = null;
+
+    public function openDetail($id)
+    {
+        return redirect()->route('menu.report', ['job_id' => $id]);
+    }
 
     public function updated($key)
     {
@@ -60,17 +69,11 @@ new
                         });
                 });
             })
-            ->when($this->range, function ($q) {
-
-                $start = data_get($this->range, 'start');
-                $end = data_get($this->range, 'end');
-
-                if ($start && $end) {
-                    $q->whereBetween('created_at', [
-                        \Carbon\Carbon::parse($start)->startOfDay(),
-                        \Carbon\Carbon::parse($end)->endOfDay(),
-                    ]);
-                }
+            ->when($this->startDate && $this->endDate, function ($q) {
+                $q->whereBetween('created_at', [
+                    $this->startDate . ' 00:00:00',
+                    $this->endDate . ' 23:59:59',
+                ]);
             })
             ->latest()
             ->paginate($this->perPage);

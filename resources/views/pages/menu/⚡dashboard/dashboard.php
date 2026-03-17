@@ -20,7 +20,10 @@ new
     public $cvData = [];
 
     public $kpis = [];
-    public $elements  = [];
+    public $elements = [];
+    public $stationName;
+    public $highRisk;
+    public $bottleneckCount;
     public $metrics = [];
 
     // chart comparison
@@ -44,6 +47,7 @@ new
 
         $this->initJobData($job);
         $stations = $this->loadStations($job);
+        $this->bottleneckCount = $stations->where('status_station', 'Bottleneck')->count();
         $this->prepareKpis($job);
         $this->loadBottleneck($stations);
         $this->loadMetrics($job);
@@ -110,9 +114,11 @@ new
     private function loadBottleneck($stations)
     {
         $bottleneck = $stations->sortByDesc('mean_ct')->first();
-
+        $maxCv = $stations->max('cv_persen');
         if ($bottleneck) {
-            $this->elements  = $bottleneck->workElements;
+            $this->stationName = $bottleneck->station_name;
+            $this->elements = $bottleneck->workElements;
+            $this->highRisk = round($maxCv, 1);
         }
     }
 

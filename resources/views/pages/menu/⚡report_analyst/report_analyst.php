@@ -2,11 +2,10 @@
 
 use App\Exports\LineAnalysisExport;
 use App\Models\AnalysisJob;
-use App\Models\SimulationResult;
-use App\Models\SimulationStation;
 use App\Models\StationResult;
 use App\Models\WorkElement;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -16,6 +15,8 @@ new
     public $n_stations;
     public $operators;
     public $target;
+    #[Url]
+    public $job_id = null;
 
     public $stations = [];
     public $meanCT = [];
@@ -33,8 +34,13 @@ new
 
     public function mount()
     {
-        // Ambil job terakhir
-        $job = AnalysisJob::latest()->first();
+        // kalau ada job_id → pakai itu
+        if ($this->job_id) {
+            $job = AnalysisJob::find($this->job_id);
+        } else {
+            $job = AnalysisJob::latest()->first();
+        }
+
         if (!$job)
             return;
 

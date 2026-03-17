@@ -139,34 +139,67 @@
         {{-- Divider --}}
         <div class="border-t border-slate-200 dark:border-slate-700"></div>
         <div class="space-y-6">
-            <div class="mb-8">
+            <div class="mb-4">
                 <flux:heading size="lg" class="font-semibold">
                     Upload Video Rekaman
+                    <div class="flex flex-wrap items-center mt-1 text-slate-500 space-x-2">
+                        <flux:text size="md">Satu video per stasiun</flux:text>
+                        <span>•</span>
+                        <flux:text size="md">nama file = nama stasiun</flux:text>
+                    </div>
                 </flux:heading>
-                <div class="flex flex-wrap gap-1 mt-1 justify-start">
-                    <flux:text size="md" class="text-slate-500">
-                        Satu video per stasiun
-                        <span class="mx-2">•</span>
-                        <span class="mx-2">Format yang didukung :</span>
-                    </flux:text>
-                    <flux:badge color="blue" size="sm">.mp4</flux:badge>
-                    <flux:badge color="blue" size="sm">.avi</flux:badge>
-                    <flux:badge color="blue" size="sm">.mov</flux:badge>
-                    <flux:badge color="blue" size="sm">.mkv</flux:badge>
-                    <flux:badge color="blue" size="sm">.mts</flux:badge>
-
-                </div>
             </div>
 
-            <flux:file-upload wire:model.live="file_list" multiple accept=".mp4,.avi,.mov,.mkv,.mts">
-                <flux:file-upload.dropzone class="min-h-[220px] flex flex-col items-center justify-center
-               rounded-2xl border-2 border-dashed
-               border-slate-300 dark:border-slate-600
-               hover:border-[#2A5298] hover:bg-[#2A5298]/10 hover:text-[#2A5298] transition" with-progress
-                    heading="Klik atau drag & drop video di sini"
-                    text="Nama file akan otomatis disimpan sebagai nama stasiun kerja" accept=".mp4,.avi,.mov,.mkv" />
-            </flux:file-upload>
+            <div x-data="{ isDropping:false, progress:null }" x-on:dragover.prevent="isDropping = true"
+                x-on:dragleave.prevent="isDropping = false" x-on:drop.prevent="isDropping = false"
+                x-on:livewire-upload-start="progress = 0"
+                x-on:livewire-upload-progress="progress = $event.detail.progress"
+                x-on:livewire-upload-finish="progress = 100; setTimeout(()=>progress=null,800)"
+                x-on:livewire-upload-error="progress = null" class="min-h-[220px] flex flex-col items-center justify-center
+rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600
+hover:border-[#2A5298] hover:bg-[#2A5298]/10 hover:text-[#2A5298] transition cursor-pointer relative overflow-hidden">
 
+                <input type="file" wire:model="file_list" multiple accept=".mp4,.avi,.mov,.mkv,.mts"
+                    class="absolute inset-0 opacity-0 cursor-pointer">
+
+                <!-- DONUT PROGRESS -->
+                <div x-show="progress !== null" class="absolute flex items-center justify-center">
+                    <div class="relative w-24 h-24">
+                        <svg class="w-24 h-24 -rotate-90">
+                            <circle cx="48" cy="48" r="40" stroke-width="8" class="text-gray-200 dark:text-neutral-700"
+                                stroke="currentColor" fill="transparent" />
+                            <circle cx="48" cy="48" r="40" stroke-width="8" stroke="currentColor" fill="transparent"
+                                stroke-linecap="round" class="text-blue-500 transition-all duration-500 ease-out"
+                                stroke-dasharray="251" :stroke-dashoffset="251 - (251 * progress / 100)" />
+                        </svg>
+                        <div
+                            class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-blue-500">
+                            <span x-text="progress + '%'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="progress === null"
+                    class="flex flex-col items-center text-center pointer-events-none space-y-1.5">
+                    <flux:icon.cloud-arrow-up variant="solid" class="text-[#2A5298] size-12" />
+                    <p class="font-semibold text-md text-slate-700 dark:text-slate-200">
+                        Klik atau drag & drop video di sini
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Nama file akan otomatis disimpan sebagai <strong>nama stasiun kerja</strong>
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Contoh: <strong>jahit_lengan.mp4</strong> → Stasiun <strong>"jahit_lengan"</strong>
+                    </p>
+                    <div class="flex gap-1 flex-wrap justify-center">
+                        <flux:badge color="blue" size="sm">.mp4</flux:badge>
+                        <flux:badge color="blue" size="sm">.avi</flux:badge>
+                        <flux:badge color="blue" size="sm">.mov</flux:badge>
+                        <flux:badge color="blue" size="sm">.mkv</flux:badge>
+                        <flux:badge color="blue" size="sm">.mts</flux:badge>
+                    </div>
+                </div>
+            </div>
             @error('file_list')
                 <flux:text size="sm" class="text-rose-500">
                     {{ $message }}
@@ -188,26 +221,44 @@
             @if ($file_list)
                 <div class="mt-4 flex flex-col gap-3 w-full">
                     @foreach ($file_list as $index => $video)
-                        @if (in_array(strtolower($video->getClientOriginalExtension()), ['mp4', 'mov', 'avi', 'mkv']))
+                        @if (in_array(strtolower($video->getClientOriginalExtension()), ['mp4', 'mov', 'avi', 'mkv', 'mts']))
 
-                            <flux:file-item wire:key="video-{{ $index }}" :heading="$video->getClientOriginalName()"
-                                :size="$video->getSize()">
+                            <div wire:key="video-{{ $index }}"
+                                class="flex items-center justify-between gap-4 p-4
+                                                                                 border border-gray-200 dark:border-neutral-700
+                                                                                 rounded-xl bg-white dark:bg-neutral-900 shadow-sm">
+                                <div class="flex items-center gap-4">
 
-                                <div class="flex items-start gap-4 mt-3">
-                                    <video src="{{ $video->temporaryUrl() }}" class="w-40 rounded-lg" controls preload="metadata">
-                                    </video>
+                                    <flux:icon.film class="size-6 text-blue-500" />
+
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                            {{ $video->getClientOriginalName() }}
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                            {{ number_format($video->getSize() / 1024 / 1024, 2) }} MB
+                                        </span>
+
+                                    </div>
                                 </div>
-                                <x-slot name="actions">
-                                    <flux:file-item.remove wire:click="removeVideo({{ $index }})" aria-label="Remove file" />
-                                </x-slot>
-                            </flux:file-item>
 
+                                <button wire:click="removeVideo({{ $index }})" type="button"
+                                    class="text-red-500 hover:text-red-600 text-sm font-medium transition">
+                                    Hapus
+                                </button>
+
+                            </div>
+
+                            <!-- Nama Stasiun -->
                             <div class="flex flex-col gap-2">
-                                <flux:input label="Nama Stasiun" wire:model.defer="station_name.{{ $index }}" class="w-52" />
-                                <flux:text size="xs" class="text-slate-400">
+                                <flux:input label="Nama Stasiun" wire:model.defer="station_name.{{ $index }}"
+                                    class:input="w-52 text-sm" />
+
+                                <flux:text class="text-xs text-slate-500 dark:text-slate-400">
                                     Nama ini akan digunakan sebagai nama file saat disimpan
                                 </flux:text>
                             </div>
+
                         @endif
                     @endforeach
                 </div>
@@ -220,13 +271,6 @@
                 class="px-6 disabled:cursor-not-allowed disabled:opacity-50">
                 Reset
             </flux:button>
-
-            {{-- <flux:link as="button" variant="subtle" href="{{ route('menu.report') }}" icon="exclamation-circle"
-                icon:variant="outline" type="submit"
-                class="!bg-[#2A5298] !text-white px-4 py-2 rounded-lg text-sm disabled:!cursor-not-allowed disabled:!opacity-50"
-                :disabled="$step < 3">
-                Mulai Analisis
-            </flux:link> --}}
             <flux:button type="submit" variant="filled"
                 class="!bg-[#2A5298] !text-white px-4 py-2 rounded-lg text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="$step < 3">

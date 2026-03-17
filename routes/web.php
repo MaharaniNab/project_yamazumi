@@ -22,6 +22,7 @@ Route::prefix('menu')->name('menu.')->group(function () {
     Route::livewire('analyst_flow', 'pages::menu.analyst_flow')->name('analyst');
     Route::livewire('report_analyst', 'pages::menu.report_analyst')->name('report');
     Route::livewire('simulation', 'pages::menu.simulation')->name('simulation');
+    Route::livewire('report_analyst', 'pages::menu.report_analyst')->name('report');
 });
 
 Route::prefix('data')->name('data.')->group(function () {

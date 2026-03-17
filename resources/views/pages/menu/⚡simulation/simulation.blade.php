@@ -20,7 +20,7 @@
                     MP Rebalancing
                 </flux:badge>
                 <flux:badge color="amber" size="sm">
-                    Σ MP = MP Aktual
+                    Constraint: Σ MP = MP Aktual
                 </flux:badge>
             </div>
         </div>
@@ -34,7 +34,7 @@
                 </flux:button>
             </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 @foreach ($this->kpis as $kpi)
                     @php
                         $color = match ($kpi['color']) {
@@ -45,8 +45,9 @@
                         };
                     @endphp
 
-                    <flux:card class="px-4 py-2 flex flex-col items-center text-center rounded-xl shadow-sm
-                                    transition hover:-translate-y-1 duration-300 !border {{ $color }}">
+                    <flux:card
+                        class="px-4 py-2 flex flex-col items-center text-center rounded-xl shadow-sm
+                                                                    transition hover:-translate-y-1 duration-300 !border {{ $color }}">
                         <div class="text-[11px] uppercase tracking-wide opacity-80">
                             {{ $kpi['label'] }}
                         </div>
@@ -323,7 +324,7 @@
 
                         <flux:card
                             class="flex-1 px-3 py-2 flex flex-col items-center justify-center text-center
-                                                                                                                                                                           border {{ $color }}">
+                                                                                                                                                                                                           border {{ $color }}">
                             <div class="text-[11px] font-medium uppercase">
                                 {{ $kpi['label'] }}
                             </div>
@@ -395,11 +396,12 @@
     <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-2">
         <flux:heading size="md" class="mb-4 flex items-center justify-between">
             <div class="font-semibold">
-                Detail Elemen Kerja per Stasiun
+                Status Stasiun Pasca Kaizen
                 <flux:subheading class="flex items-center text-xs text-neutral-500 space-x-2">
-                    <span>Cycle-normalized duration</span>
+                    Deteksi sisa bottleneck & rekomendasi jumlah operator optimal
+                    {{-- <span>Cycle-normalized duration</span>
                     <span>·</span>
-                    <span>durasi per siklus</span>
+                    <span>durasi per siklus</span> --}}
                 </flux:subheading>
             </div>
         </flux:heading>
@@ -419,17 +421,48 @@
                 @foreach($this->elementsData as $el)
                     <flux:table.row
                         class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900/50 dark:even:bg-gray-950">
-                        <flux:table.cell class="!font-medium !px-4">{{ $el['station_name'] }}</flux:table.cell>
-                        <flux:table.cell align="center">{{ number_format($el['ct_before'], 1) }}s</flux:table.cell>
-                        <flux:table.cell align="center">{{ number_format($el['ct_after'], 1) }}s</flux:table.cell>
-                        <flux:table.cell align="center">{{ $el['mp_assigned'] }}</flux:table.cell>
+                        @if($el['nvaDOM'] !== 1)
+                            <flux:table.cell class="!font-medium !px-4">{{ $el['station_name'] }}</flux:table.cell>
+                        @else
+                            <flux:table.cell class="!font-medium !px-4">
+                                {{ $el['station_name'] }}
+                                <flux:badge size="sm" color="red" class="text-[8px]">NVA-Dom</flux:badge>
+                            </flux:table.cell>
+                        @endif
+                        <flux:table.cell align="center">
+                            <span class="line-through text-gray-400">
+                                {{ number_format($el['ct_before'], 1) }}s
+                            </span>
+                        </flux:table.cell>
+                        <flux:table.cell align="center" class="!text-green-600">{{ number_format($el['ct_after'], 1) }}s
+                        </flux:table.cell>
+                        <flux:table.cell align="center">
+                            @if(($el['mp_assigned'] ?? 1) > 1)
+                                {{ $el['mp_assigned'] }}
+                                <p class="text-xs text-yellow-500">
+                                    ({{ number_format($el['ct_after'], 1) }}÷{{ $el['mp_assigned'] }})</p>
+                            @else
+                                {{ $el['mp_assigned'] }}
+                            @endif
+                        </flux:table.cell>
                         <flux:table.cell align="center">{{ number_format($el['ct_efektif'], 1) }}s</flux:table.cell>
                         <flux:table.cell align="center" class="!text-green-500">{{ number_format($el['vs_takt'], 1) }}s
                         </flux:table.cell>
                         <flux:table.cell align="center">
+                            @php
+                                $mp = $el['mp_assigned'] ?? 1;
+                                $status = $el['status'] ?? '';
+                            @endphp
+
                             <flux:badge size="sm"
-                                color="{{ $el['status'] === 'No Action' ? 'zinc' : ($el['status'] === 'Resolved' ? 'green' : 'yellow') }}">
-                                {{ $el['status'] }}
+                                color="{{ $status === 'No Action' ? 'zinc' : ($status === 'Resolved' ? 'green' : 'yellow') }}">
+
+                                @if($status === 'Resolved' && $mp > 1)
+                                    {{ str_repeat('✓', $mp) }} {{ $status }} ({{ $mp }} op)
+                                @else
+                                    {{ $status }}
+                                @endif
+
                             </flux:badge>
                         </flux:table.cell>
                     </flux:table.row>

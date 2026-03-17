@@ -8,12 +8,11 @@
                     {{ $target }} pcs/hari · {{ $operators }} Operator
                 </flux:subheading>
             </flux:heading>
-
         </div>
 
         <div class="flex gap-2">
             <flux:badge size="sm" rounded icon="exclamation-triangle" variant="micro" color="red">
-                Bottleneck Aktif
+                {{ $bottleneckCount }} Bottleneck Aktif
             </flux:badge>
 
             <flux:badge size="sm" rounded icon="exclamation-triangle" variant="micro" color="amber">
@@ -45,7 +44,8 @@
             @endphp
 
             <div class="group cursor-pointer transition duration-500 hover:-translate-y-2">
-                <flux:card class="relative dark:bg-neutral-900 overflow-hidden py-4 px-6 rounded-2xl shadow-md transition-all duration-500"
+                <flux:card
+                    class="relative dark:bg-neutral-900 overflow-hidden py-4 px-6 rounded-2xl shadow-md transition-all duration-500"
                     style="border-top:4px solid {{ $kpi['accent'] }}">
                     <div class="text-md font-semibold text-gray-700 dark:text-neutral-200">
                         {{ $kpi['label'] }}
@@ -168,14 +168,24 @@
     {{-- WORK ELEMENT --}}
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-2">
-            <flux:heading size="md" class="mb-4 font-semibold">
-                Elemen Kerja
-                <flux:subheading class="flex items-center text-xs text-neutral-500 space-x-2">
-                    <span>Bottleneck Station</span>
-                    <span>·</span>
-                    <span>CT Mean: {{ number_format($meanCT[0], 1) }}s</span>
-                </flux:subheading>
-            </flux:heading>
+            <div class="flex items-center justify-between">
+                <flux:heading size="md" class="mb-4 font-semibold">
+                    Elemen Kerja — {{ $stationName }}
+                    <flux:subheading class="flex items-center text-xs text-neutral-500 space-x-2">
+                        <span>Bottleneck Station</span>
+                        <span>·</span>
+                        <span>CT Mean: {{ number_format($meanCT[0], 1) }}s</span>
+                    </flux:subheading>
+                </flux:heading>
+
+                <flux:badge size="sm" rounded icon="exclamation-triangle" variant="micro" color="red">
+                    <div class="flex items-center gap-2 text-red-500 dark:text-neutral-200">
+                        <span class="font-medium">High Risk</span>
+                        <span>•</span>
+                        <span>CV: {{ $highRisk }}%</span>
+                    </div>
+                </flux:badge>
+            </div>
 
             <div class="border-t mb-3"></div>
 
@@ -183,8 +193,8 @@
                 <flux:table.columns>
                     <flux:table.column>Elemen</flux:table.column>
                     <flux:table.column align="center">Kategori</flux:table.column>
-                    <flux:table.column align="center">Durasi</flux:table.column>
-                    <flux:table.column align="center">Total</flux:table.column>
+                    <flux:table.column align="center">Proporsi</flux:table.column>
+                    <flux:table.column align="center">Durasi/σ</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -199,8 +209,22 @@
                                     {{ $el->kategori_va }}
                                 </flux:badge>
                             </flux:table.cell>
+                            @php
+                                $totalMean = collect($elements)->sum('mean_per_kejadian');
+                            @endphp
                             <flux:table.cell align="center">
-                                {{ number_format($el->durasi_detik, 1) }}s
+                                @php
+                                    $pct = $totalMean > 0
+                                        ? ($el->mean_per_kejadian / $totalMean) * 100
+                                        : 0;
+                                @endphp
+
+                                <div class="w-full h-2 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                                    <div class="h-2 rounded-full transition-all duration-500"
+                                        style="width: {{ min($pct, 100) }}%;
+                                       background-color: {{ $el->kategori_va == 'VA' ? '#22c55e' : ($el->kategori_va == 'N-NVA' ? '#f59e0b' : '#ef4444') }};">
+                                    </div>
+                                </div>
                             </flux:table.cell>
                             <flux:table.cell align="center">
                                 {{ number_format($el->total_durasi, 1) }}s
@@ -212,11 +236,42 @@
                     @endforeach
                 </flux:table.rows>
             </flux:table>
+            @php
+                $nvaTotal = collect($elements)
+                    ->where('kategori_va', 'NVA')
+                    ->sum('mean_per_kejadian');
+            @endphp
+            @php
+                $total = collect($elements)->sum('mean_per_kejadian');
+
+                $nvaPercent = $total > 0
+                    ? ($nvaTotal / $total) * 100
+                    : 0;
+            @endphp
+            @php
+                $saving = $nvaTotal * 0.4; // asumsi 40% reduksi
+            @endphp
+            <div
+                class="bg-red-50 py-4 px-3 mt-4 text-xs font-medium flex text-neutral-600 dark:text-neutral-400 items-center flex-wrap gap-1">
+                <span>NVA Total :</span>
+                <span class="text-red-600 font-semibold">
+                    {{ number_format($nvaTotal, 1) }}s
+                </span>
+                <span>·</span>
+                <span>
+                    Potensi reduksi ~{{ number_format($nvaPercent, 0) }}%
+                    dengan perbaikan layout
+                </span>
+                <flux:icon.arrow-long-right variant="micro" />
+
+                <span class="text-green-600 font-semibold">
+                    penghematan ±{{ number_format($saving, 1) }}s/siklus
+                </span>
+            </div>
         </flux:card>
 
         {{-- COMPARISON --}}
         <flux:card class="bg-white dark:bg-neutral-900 shadow-sm xl:col-span-3 overflow-hidden">
-
             <flux:heading size="md" class="font-semibold">
                 Perbandingan Optimasi
                 <flux:subheading class="text-xs text-neutral-500">

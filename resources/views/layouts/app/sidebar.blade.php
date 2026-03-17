@@ -165,11 +165,7 @@
     <x-confirm-delete />
 
     @fluxScripts
-
-    <footer
-        class="fixed z-10 bottom-0 w-full text-end px-6 py-4 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-zinc-800 shadow-inner">
-        &copy; {{ date('Y') }} PT. Fukuryo Indonesia. All rights reserved.
-    </footer>
+    
 </body>
 
 </html>
