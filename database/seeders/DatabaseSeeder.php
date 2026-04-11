@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'aditya@fukuryo.co.id',
             'birth_date' => $birthAditya,
             'password' => Hash::make(
-                Carbon::parse($birth)->format('dmY')
+                Carbon::parse($birthAditya)->format('dmY')
             ),
         ]);
 
