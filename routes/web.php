@@ -31,3 +31,17 @@ Route::prefix('data')->name('data.')->group(function () {
 });
 
 require __DIR__ . '/settings.php';
+
+use App\Http\Controllers\YamazumiController;
+
+// Halaman utama form upload
+Route::get('/yamazumi', [YamazumiController::class, 'index'])->name('yamazumi.index');
+
+// Endpoint untuk menerima form dari Blade dan mengirim ke Python
+Route::post('/yamazumi/analyze', [YamazumiController::class, 'analyze'])->name('yamazumi.analyze');
+
+// Endpoint untuk mengecek status (akan dipanggil oleh AJAX/JavaScript dari Blade)
+Route::get('/yamazumi/status/{job_id}', [YamazumiController::class, 'checkStatus'])->name('yamazumi.status');
+
+// Halaman untuk menampilkan hasil akhir (Grafik & Tabel)
+Route::get('/yamazumi/result/{job_id}', [YamazumiController::class, 'showResult'])->name('yamazumi.result');
