@@ -1,12 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "pip install -r api/requirements.txt"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "gunicorn --chdir api index:app --bind 0.0.0.0:$PORT --workers 2 --timeout 300"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
-
-[nixpacks]
-aptPkgs = ["libgl1", "libglib2.0-0"]
