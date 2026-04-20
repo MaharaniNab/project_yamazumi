@@ -1,9 +1,14 @@
+# Railway Configuration for Python Flask API
+# This tells Railway to ONLY build the /api/ folder
+# Prevents auto-detection of PHP/Laravel app in root
+
 [build]
 builder = "dockerfile"
-dockerfilePath = "api/Dockerfile"
+dockerfile = "./api/Dockerfile"
 
 [deploy]
 startCommand = "gunicorn index:app --bind 0.0.0.0:$PORT --workers 2 --timeout 300"
-healthcheckPath = "/health"
-healthcheckTimeout = 30
 restartPolicyType = "on_failure"
+healthcheckPath = "/health"
+healthcheckTimeout = 10
+
