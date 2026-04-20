@@ -259,7 +259,7 @@ def run_single_video_analysis(video_path, filename_context=""):
                 no_detection_frames += 1
                 if no_detection_frames < MAX_MISSING_TOLERANCE: new_status = last_valid_status
                 else: new_status = "Lainnya"
-        except:
+        except Exception:
             new_status = last_valid_status
 
         if new_status and new_status != curr_status:
@@ -486,7 +486,7 @@ def run_robust_balancing_simulation(original_job_data, mp_aktual=None):
     old_sum = job.get("summary", {})
     def _parse(val, suffix):
         try: return float(str(val).replace(suffix, ""))
-        except: return 0.0
+        except Exception: return 0.0
 
     lb_before   = _parse(old_sum.get("Presentase Line Balance", "0%"), "%")
     neck_before = _parse(old_sum.get("Neck Time", "0s"), "s")
@@ -733,27 +733,30 @@ def api_upload():
 
     metadata_dict = request.form.to_dict()
 
-    new_job = JobQueue(
-        id=jid,
-        status='processing',
-        metadata_json=json.dumps(metadata_dict),
-        video_map_json=json.dumps(vmap),
-        takt_time=takt,
-        mp_aktual=mp_aktual
-    )
-    db.session.add(new_job)
-    db.session.commit()
+    try:
+        new_job = JobQueue(
+            id=jid,
+            status='processing',
+            metadata_json=json.dumps(metadata_dict),
+            video_map_json=json.dumps(vmap),
+            takt_time=takt,
+            mp_aktual=mp_aktual
+        )
+        db.session.add(new_job)
+        db.session.commit()
 
-    threading.Thread(
-        target=run_analysis_job_db,
-        args=(jid, "Laravel_System", current_app._get_current_object())
-    ).start()
+        threading.Thread(
+            target=run_analysis_job_db,
+            args=(jid, "Laravel_System", current_app._get_current_object())
+        ).start()
 
-    return jsonify({
-        "message": "Proses analisis berhasil masuk antrean",
-        "job_id":  jid,
-        "status":  "processing"
-    }), 202
+        return jsonify({
+            "message": "Proses analisis berhasil masuk antrean",
+            "job_id":  jid,
+            "status":  "processing"
+        }), 202
+    except Exception as e:
+        return jsonify({"error": f"Gagal menyimpan job: {str(e)}"}), 500
 
 @app.route('/api/results/<job_id>', methods=['GET'])
 def api_results(job_id):
