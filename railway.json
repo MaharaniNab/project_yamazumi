@@ -2,20 +2,12 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "dockerfile",
-    "dockerfile": "./api/Dockerfile"
+    "dockerfile": "api/Dockerfile",
+    "buildContext": "."
   },
   "deploy": {
-    "startCommand": "gunicorn index:app --bind 0.0.0.0:$PORT --workers 2 --timeout 300",
+    "startCommand": "cd /app && gunicorn index:app --bind 0.0.0.0:$PORT --workers 2 --timeout 300 --access-logfile - --error-logfile -",
     "restartPolicyType": "on_failure",
-    "restartPolicyMaxRetries": 5,
-    "healthchecks": {
-      "liveness": {
-        "initialDelaySeconds": 10,
-        "periodSeconds": 10,
-        "timeoutSeconds": 5,
-        "failureThreshold": 3,
-        "command": ["curl", "-f", "http://localhost:$PORT/health"]
-      }
-    }
+    "restartPolicyMaxRetries": 5
   }
 }

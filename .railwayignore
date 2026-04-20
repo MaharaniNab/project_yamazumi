@@ -1,0 +1,32 @@
+# Tell Railway to ignore PHP/Laravel files
+# Build ONLY the Python API from /api folder
+
+# Composer/PHP files
+composer.json
+composer.lock
+/vendor
+/bootstrap
+/config
+/database
+/routes
+/storage
+/tests
+artisan
+phpunit.xml
+pint.json
+
+# Node/Frontend files  
+package-lock.json
+node_modules
+vite.config.js
+
+# Root files that trigger PHP detection
+/.github
+/.env.example
+/.env.production
+
+# Keep only api folder
+!/api/**
+/api/uploads
+/api/static
+/api/db_production.sqlite
