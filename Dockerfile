@@ -1,23 +1,17 @@
-# ⚠️ DEPRECATED: This Dockerfile is for reference only.
+# ⚠️ DEPRECATED: This file is only for reference
 #
-# The actual Dockerfile for Railway deployment is located at:
-#   👉 api/Dockerfile
+# For Railway deployment, use: api/Dockerfile
+# 
+# Railway will auto-detect and use api/Dockerfile based on:
+# - .railwayignore (ignores PHP/Node files)
+# - railway.json (explicitly specifies api/Dockerfile)
+# - railway.toml (backup configuration)
 #
-# The Python Flask API for video analysis/Yamazumi is deployed from:
-#   - dockerfile: api/Dockerfile
-#   - requirements: api/requirements.txt
-#   - main app: api/index.py
-#
-# For Railway deployment configuration, see: railway.toml
-#
-# If you're looking for the Rails/Laravel application:
-# - It is NOT deployed to Railway (use separate service if needed)
-# - Main app files in root directory with composer.json
-#
-# To deploy to Railway:
-# 1. Go to your Railway project dashboard
-# 2. New Service → GitHub
-# 3. Select this repository
-# 4. Configure root directory: Leave as default (root)
-# 5. Railway will automatically detect api/Dockerfile from railway.toml
+# This file intentionally left minimal to prevent PHP detection
+# by Railway's Railpack auto-detection system.
+
+FROM alpine:latest
+RUN echo "This is a placeholder. Railway should use api/Dockerfile instead."
+CMD ["echo", "Error: Railway used wrong Dockerfile. Check configuration."]
+
 
