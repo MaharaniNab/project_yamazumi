@@ -1,21 +1,34 @@
 <?php
 
 use App\Models\AnalysisJob;
-use Illuminate\Support\Carbon;
+use Flux\DateRange;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('Riwayat')] class extends Component {
-
+new
+    #[Title('Riwayat')]
+    class extends Component {
     use WithPagination;
 
     public $lines = [];
-    #[Url] public $selectedLine = null;
-    #[Url] public $search = '';
-    #[Url] public array $range;
+    #[Url]
+    public $selectedLine = null;
+    #[Url]
+    public $search = '';
     public $perPage = 10;
+    #[Url]
+    public $startDate = null;
+    #[Url]
+
+    public $endDate = null;
+
+    public function openDetail($id)
+    {
+        return redirect()->route('menu.report', ['job_id' => $id]);
+    }
 
     public function updated($key)
     {
@@ -26,28 +39,43 @@ new #[Title('Riwayat')] class extends Component {
 
     public function mount()
     {
-        $this->lines = AnalysisJob::distinct()
+        $this->range = [
+            'start' => now()->subMonth()->toDateString(),
+            'end' => now()->toDateString(),
+        ];
+        // ambil semua line unik
+        $this->lines = AnalysisJob::select('line_name')
+            ->distinct()
             ->pluck('line_name')
             ->toArray();
     }
 
     public function getJobsProperty()
     {
-        $query = AnalysisJob::with('user')->withCount(['stations as bottleneck_count' => fn($q) => $q->where('status_station', 'Bottleneck')]);
-        if ($this->selectedLine) {
-            $query->where('line_name', $this->selectedLine);
-        }
-        if ($this->search) {
-            $search = "%{$this->search}%";
-            $query->where(function ($q) use ($search) {
-                $q->where('line_name', 'like', $search)->orWhereHas('user', fn($u) => $u->where('name', 'like', $search));
-            });
-        }
-        if (!empty($this->range['start']) && !empty($this->range['end'])) {
-            $query->whereBetween('created_at', [Carbon::parse($this->range['start'])->startOfDay(), Carbon::parse($this->range['end'])->endOfDay()]);
-        }
-        return $query->latest()
-            
-        ->paginate($this->perPage);
+        return AnalysisJob::with('user')
+            ->withCount([
+                'stations as bottleneck_count' => function ($q) {
+                    $q->where('status_station', 'Bottleneck');
+                }
+            ])
+            ->when($this->selectedLine, function ($q) {
+                $q->where('line_name', $this->selectedLine);
+            })
+            ->when($this->search, function ($q) {
+                $q->where(function ($query) {
+                    $query->where('line_name', 'like', '%' . trim($this->search) . '%')
+                        ->orWhereHas('user', function ($user) {
+                            $user->where('name', 'like', '%' . trim($this->search) . '%');
+                        });
+                });
+            })
+            ->when($this->startDate && $this->endDate, function ($q) {
+                $q->whereBetween('created_at', [
+                    $this->startDate . ' 00:00:00',
+                    $this->endDate . ' 23:59:59',
+                ]);
+            })
+            ->latest()
+            ->paginate($this->perPage);
     }
 };

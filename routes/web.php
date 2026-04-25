@@ -30,3 +30,12 @@ Route::prefix('data')->name('data.')->group(function () {
 });
 
 require __DIR__ . '/settings.php';
+
+use App\Http\Controllers\AnalysisController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/analysis/upload',          [AnalysisController::class, 'upload']);
+    Route::get('/analysis/status/{jobId}',   [AnalysisController::class, 'checkStatus']);
+    Route::get('/analysis/results/{jobId}',  [AnalysisController::class, 'showResults']);
+    Route::get('/analysis/simulate/{jobId}', [AnalysisController::class, 'simulate']);
+});

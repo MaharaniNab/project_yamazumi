@@ -137,7 +137,7 @@
         </flux:heading>
         <div class="pt-6 border-t"></div>
 
-        <flux:select label="Pilih Stasiun" variant="combobox" wire:model="selectedStation" class="w-full" required>
+        <flux:select label="Pilih Stasiun" wire:model="selectedStation" class="w-full" required>
             <flux:select.option value="">
                 - Semua Stasiun -
             </flux:select.option>

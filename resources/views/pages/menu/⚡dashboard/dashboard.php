@@ -14,34 +14,34 @@ new
     public $operators;
     public $target;
 
-    public $stations = [];
-    public $meanCT = [];
-    public $robustCT = [];
-    public $cvData = [];
+    public $stations  = [];
+    public $meanCT    = [];
+    public $robustCT  = [];
+    public $cvData    = [];
 
-    public $kpis = [];
+    public $kpis      = [];
     public $elements  = [];
-    public $metrics = [];
+    public $metrics   = [];
 
-    // chart comparison
     public $beforeData = [];
-    public $afterData = [];
-
+    public $afterData  = [];
 
     public function mount()
     {
-        $this->authorize('read_dashboard');
-        if (!auth()->check() || !auth()->user()->isActive()) {
+        // Ganti authorize dengan pengecekan manual agar tidak crash kalau permission belum di-seed
+        if (!auth()->check()) {
+            abort(403);
+        }
+        if (!auth()->user()->is_active) {
             abort(403, 'Akun Anda tidak aktif.');
         }
 
         $job = AnalysisJob::with([
             'stations.workElements',
             'simulations.stations'
-        ])->latest()->first();
+        ])->where('status', 'completed')->latest()->first();
 
-        if (!$job)
-            return;
+        if (!$job) return;
 
         $this->initJobData($job);
         $stations = $this->loadStations($job);
@@ -53,19 +53,19 @@ new
 
     private function initJobData($job)
     {
-        $this->taktTime = $job->takt_time;
+        $this->taktTime  = $job->takt_time;
         $this->operators = $job->n_stations;
-        $this->target = $job->output_harian;
+        $this->target    = $job->output_harian;
     }
 
     private function loadStations($job)
     {
         $stations = $job->stations->sortBy('station_order');
 
-        $this->stations = $stations->pluck('station_name')->toArray();
-        $this->meanCT = $stations->pluck('mean_ct')->toArray();
-        $this->robustCT = $stations->pluck('robust_ct')->toArray();
-        $this->cvData = $stations->pluck('cv_persen')->toArray();
+        $this->stations  = $stations->pluck('station_name')->toArray();
+        $this->meanCT    = $stations->pluck('mean_ct')->toArray();
+        $this->robustCT  = $stations->pluck('robust_ct')->toArray();
+        $this->cvData    = $stations->pluck('cv_persen')->toArray();
 
         return $stations;
     }
@@ -74,36 +74,36 @@ new
     {
         $this->kpis = [
             [
-                'label' => 'Line Efficiency',
-                'value' => $job->line_efficiency,
-                'target' => 75,
-                'unit' => '%',
+                'label'     => 'Line Efficiency',
+                'value'     => $job->line_efficiency ?? 0,
+                'target'    => 75,
+                'unit'      => '%',
                 'direction' => 'higher',
-                'accent' => '#3D7A99'
+                'accent'    => '#3D7A99'
             ],
             [
-                'label' => 'Balance Delay',
-                'value' => $job->balance_delay,
-                'target' => 15,
-                'unit' => '%',
+                'label'     => 'Balance Delay',
+                'value'     => $job->balance_delay ?? 0,
+                'target'    => 15,
+                'unit'      => '%',
                 'direction' => 'lower',
-                'accent' => '#2C8C83'
+                'accent'    => '#2C8C83'
             ],
             [
-                'label' => 'Smoothness Index',
-                'value' => $job->smoothness_index,
-                'target' => 40,
-                'unit' => '',
+                'label'     => 'Smoothness Index',
+                'value'     => $job->smoothness_index ?? 0,
+                'target'    => 40,
+                'unit'      => '',
                 'direction' => 'lower',
-                'accent' => '#FA6868'
+                'accent'    => '#FA6868'
             ],
             [
-                'label' => 'Output Aktual/Hari',
-                'value' => $job->line_output_hari,
-                'target' => $this->target,
-                'unit' => ' pcs',
+                'label'     => 'Output Aktual/Hari',
+                'value'     => $job->line_output_hari ?? 0,
+                'target'    => $this->target,
+                'unit'      => ' pcs',
                 'direction' => 'higher',
-                'accent' => '#312E81'
+                'accent'    => '#312E81'
             ]
         ];
     }
@@ -111,9 +111,8 @@ new
     private function loadBottleneck($stations)
     {
         $bottleneck = $stations->sortByDesc('mean_ct')->first();
-
         if ($bottleneck) {
-            $this->elements  = $bottleneck->workElements;
+            $this->elements = $bottleneck->workElements ?? collect();
         }
     }
 
@@ -126,66 +125,63 @@ new
             return;
         }
 
-        $lineEfficiencyDiff = $simulation->le_after - $simulation->le_before;
-        $balanceDelayDiff = $simulation->bd_after - $simulation->bd_before;
-        $outputDiff = $job->line_output_hari - $job->output_harian;
+        $lineEfficiencyDiff = ($simulation->le_after ?? 0) - ($simulation->le_before ?? 0);
+        $balanceDelayDiff   = ($simulation->bd_after ?? 0) - ($simulation->bd_before ?? 0);
+        $outputDiff         = ($job->line_output_hari ?? 0) - ($job->output_harian ?? 0);
 
         $metrics = [
             [
-                'label' => 'Line Efficiency',
-                'before' => $simulation->le_before,
-                'after' => $simulation->le_after,
-                'delta' => $lineEfficiencyDiff,
+                'label'  => 'Line Efficiency',
+                'before' => $simulation->le_before ?? 0,
+                'after'  => $simulation->le_after  ?? 0,
+                'delta'  => $lineEfficiencyDiff,
             ],
             [
-                'label' => 'Balance Delay',
-                'before' => $simulation->bd_before,
-                'after' => $simulation->bd_after,
-                'delta' => $balanceDelayDiff,
+                'label'  => 'Balance Delay',
+                'before' => $simulation->bd_before ?? 0,
+                'after'  => $simulation->bd_after  ?? 0,
+                'delta'  => $balanceDelayDiff,
             ],
             [
-                'label' => 'Output / Hari',
-                'before' => $job->output_harian,
-                'after' => $job->line_output_hari,
-                'delta' => $outputDiff,
+                'label'  => 'Output / Hari',
+                'before' => $job->output_harian    ?? 0,
+                'after'  => $job->line_output_hari ?? 0,
+                'delta'  => $outputDiff,
             ],
         ];
 
         $this->metrics = collect($metrics)->map(function ($m) {
-
             $diff = $m['delta'];
 
             if ($m['label'] === 'Output / Hari') {
                 $m['before'] .= ' pcs';
-                $m['after'] .= ' pcs';
-                $m['delta'] .= ' pcs';
+                $m['after']  .= ' pcs';
+                $m['delta']  .= ' pcs';
             } else {
                 $m['before'] = number_format($m['before'], 2) . '%';
-                $m['after'] = number_format($m['after'], 2) . '%';
-                $m['delta'] = number_format($diff, 2) . '%';
+                $m['after']  = number_format($m['after'],  2) . '%';
+                $m['delta']  = number_format($diff,        2) . '%';
             }
 
             if ($m['label'] === 'Balance Delay') {
-                $m['icon'] = $diff <= 0 ? 'arrow-down' : 'arrow-up';
+                $m['icon']  = $diff <= 0 ? 'arrow-down' : 'arrow-up';
                 $m['color'] = $diff <= 0 ? 'green' : 'red';
             } else {
-                $m['icon'] = $diff >= 0 ? 'arrow-up' : 'arrow-down';
+                $m['icon']  = $diff >= 0 ? 'arrow-up' : 'arrow-down';
                 $m['color'] = $diff >= 0 ? 'green' : 'red';
             }
 
             return $m;
-
         })->toArray();
     }
 
     private function loadChartData($job, $stations)
     {
         $simulation = $job->simulations->first();
-        if (!$simulation) {
-            return;
-        }
+        if (!$simulation) return;
 
-        $stationsAfter = $simulation?->stations ?? collect();
+        $stationsAfter = $simulation->stations ?? collect();
+
         $this->beforeData = $stations
             ->pluck('mean_ct')
             ->map(fn($v) => round($v, 2))
@@ -196,5 +192,4 @@ new
             ->map(fn($v) => round($v, 2))
             ->toArray();
     }
-
 };

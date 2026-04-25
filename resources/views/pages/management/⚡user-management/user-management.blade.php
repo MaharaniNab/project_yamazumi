@@ -9,22 +9,20 @@
             {{-- Show entries --}}
             <div class="flex items-center gap-2 text-sm">
                 <span>Show</span>
-                <select wire:model.live="perPage" class="h-9 border rounded px-2">
-                    <option>10</option>
-                    <option>25</option>
-                    <option>50</option>
-                    <option>100</option>
-                </select>
+                <flux:select wire:model.live="perPage" size="sm">
+                    <flux:select.option>10</flux:select.option>
+                    <flux:select.option>25</flux:select.option>
+                    <flux:select.option>50</flux:select.option>
+                    <flux:select.option>100</flux:select.option>
+                </flux:select>
                 <span>entries</span>
             </div>
 
             {{-- Search + Add --}}
             <div class="flex items-center gap-4">
                 <div class="relative w-full md:w-64">
-                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search..."
-                        class="pl-10 pr-4 py-2 rounded-lg text-sm border border-gray-300/80 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 shadow-inner focus:ring-blue-500 focus:outline-none w-full transition-all">
-                    <flux:icon icon="magnifying-glass"
-                        class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <flux:input icon="magnifying-glass" type="text" wire:model.live.debounce.300ms="search"
+                        placeholder="Search..." class:input="!bg-gray-150 !dark:bg-neutral-800 !shadow-inner" />
                 </div>
                 {{-- BUTTON --}}
                 @can('create_user')
@@ -58,7 +56,7 @@
                                 <flux:table.cell align="center">{{ $user->email }}</flux:table.cell>
                                 <flux:table.cell align="center">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-md
-                                                        {{ $user->is_active
+                                                                    {{ $user->is_active
                     ? 'bg-green-100 text-green-700'
                     : 'bg-red-100 text-red-700' }}">
                                         {{ $user->is_active ? 'Aktif' : 'Tidak Aktif' }}
@@ -145,8 +143,7 @@
             @enderror
 
             {{-- TANGGAL LAHIR --}}
-            <flux:date-picker selectable-header label="Tanggal Lahir" placeholder="Pilih tanggal lahir"
-                wire:model.defer="birth_date" />
+                <flux:input type="date" label="Tanggal Lahir" wire:model.defer="birth_date" placeholder="Pilih tanggal lahir" />
             @error('birth_date')
                 <flux:text size="sm" class="text-rose-500 -mt-2">
                     {{ $message }}
