@@ -1,4 +1,15 @@
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6" wire:poll.3000ms="checkFlaskStatus">
+
+    {{-- LOADING STATE --}}
+    @if($isProcessing)
+    <div class="flex flex-col items-center justify-center py-32 gap-6">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+        <p class="text-gray-500 dark:text-neutral-400 text-lg">{{ $processingMessage }}</p>
+        <flux:button wire:click="manualCheck" variant="outline" icon="arrow-path">
+            Cek Status Sekarang
+        </flux:button>
+    </div>
+    @else
     <div class="flex items-center justify-between">
         <div>
             <flux:heading size="lg" class="font-semibold">
@@ -253,10 +264,11 @@
             </flux:table.rows>
         </flux:table>
     </flux:card>
-</div>
+    @endif
 
+@script
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('livewire:navigated', function () {
         const taktTime = @json($taktTime);
         const stations = @json($stations);
         const meanData = @json($meanCT);
@@ -442,3 +454,5 @@
         ).render();
     });
 </script>
+@endscript
+</div>

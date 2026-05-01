@@ -147,7 +147,7 @@ new
             ]);
 
         } catch (\Exception $e) {
-            // Kalau Flask gagal, tandai error tapi jangan stop
+            \Illuminate\Support\Facades\Log::error('Flask upload error: ' . $e->getMessage());
             $job->update(['status' => 'failed']);
 
             $this->dispatch(

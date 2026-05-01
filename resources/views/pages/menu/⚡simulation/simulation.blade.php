@@ -1,4 +1,25 @@
 <div class="flex flex-col gap-6">
+
+    {{-- TOMBOL JALANKAN SIMULASI jika belum ada data --}}
+    @if(!$simulation)
+    <div class="flex flex-col items-center justify-center py-32 gap-6">
+        <flux:icon.beaker class="w-16 h-16 text-blue-400" />
+        <div class="text-center">
+            <p class="text-lg font-semibold text-gray-700 dark:text-neutral-200">Simulasi Belum Dijalankan</p>
+            <p class="text-sm text-gray-500 dark:text-neutral-400 mt-1">Klik tombol di bawah untuk memulai simulasi Kaizen Balancing</p>
+        </div>
+        @if($isRunning)
+            <div class="flex flex-col items-center gap-3">
+                <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
+                <p class="text-gray-500">{{ $runningMessage }}</p>
+            </div>
+        @else
+            <flux:button wire:click="runSimulation" variant="primary" icon="play">
+                Jalankan Simulasi
+            </flux:button>
+        @endif
+    </div>
+    @else
     <div class="space-y-4">
         <div class="space-y-1">
             <flux:heading size="lg" class="font-semibold">
@@ -438,9 +459,11 @@
         </flux:table>
     </flux:card>
 </div>
+    @endif
 
+@script
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('livewire:navigated', function () {
 
         const chartData = @json($this->chartData);
 
@@ -450,103 +473,55 @@
 
         const taktTime = @json($taktTime);
 
-        const comparisonOptions = {
+        if (!stations || stations.length === 0) return;
 
+        const comparisonOptions = {
             chart: {
                 type: 'area',
                 height: 450,
                 animations: { enabled: true, easing: 'easeinout', speed: 800 }
             },
-
             series: [
                 { name: 'Sebelum', data: comparisonBefore },
                 { name: 'Sesudah', data: comparisonAfter }
             ],
-
             colors: ['#94a3b8', '#16a34a'],
-
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
-
+            stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
                 gradient: {
-                    shade: 'light',
-                    type: 'vertical',
-                    shadeIntensity: 0.5,
+                    shade: 'light', type: 'vertical', shadeIntensity: 0.5,
                     gradientToColors: ['#cbd5e1', '#bbf7d0'],
-                    opacityFrom: 0.4,
-                    opacityTo: 0.1,
-                    stops: [0, 100]
+                    opacityFrom: 0.4, opacityTo: 0.1, stops: [0, 100]
                 }
             },
-
-            markers: {
-                size: 6,
-                strokeColors: '#fff',
-                strokeWidth: 2,
-                hover: { size: 8 }
-            },
-
+            markers: { size: 6, strokeColors: '#fff', strokeWidth: 2, hover: { size: 8 } },
             xaxis: {
                 categories: stations,
-                labels: {
-                    fontWeight: 600,
-                    fontSize: '12px',
-                    rotate: 45
-                }
+                labels: { fontWeight: 600, fontSize: '12px', rotate: 45 }
             },
-
-            yaxis: {
-                min: 0,
-                labels: {
-                    formatter: val => val + ' s'
-                }
-            },
-
-            tooltip: {
-                shared: true,
-                intersect: false,
-                theme: 'dark'
-            },
-
-            grid: {
-                borderColor: 'rgba(255,255,255,0.1)',
-                strokeDashArray: 4,
-                padding: { left: 20, right: 60 }
-            },
-
+            yaxis: { min: 0, labels: { formatter: val => val + ' s' } },
+            tooltip: { shared: true, intersect: false, theme: 'dark' },
+            grid: { borderColor: 'rgba(255,255,255,0.1)', strokeDashArray: 4, padding: { left: 20, right: 60 } },
             annotations: {
-                yaxis: [
-                    {
-                        y: taktTime,
-                        borderColor: '#ef4444',
-                        borderWidth: 1,
-                        strokeDashArray: 4,
-                        label: {
-                            text: 'Takt Time = ' + taktTime.toFixed(1) + 's',
-                            offsetY: -2,
-                            style: {
-                                background: '#ef4444',
-                                color: '#fff',
-                                fontSize: '10px',
-                                fontWeight: 500
-                            }
-                        }
+                yaxis: [{
+                    y: taktTime,
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                    strokeDashArray: 4,
+                    label: {
+                        text: 'Takt Time = ' + taktTime.toFixed(1) + 's',
+                        offsetY: -2,
+                        style: { background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: 500 }
                     }
-                ]
+                }]
             },
-
-            legend: {
-                position: 'bottom'
-            }
-
+            legend: { position: 'bottom' }
         };
-        new ApexCharts(
-            document.querySelector("#comparisonChart"),
-            comparisonOptions
-        ).render();
+
+        const el = document.querySelector("#comparisonChart");
+        if (el) new ApexCharts(el, comparisonOptions).render();
     });
 </script>
+@endscript
+</div>

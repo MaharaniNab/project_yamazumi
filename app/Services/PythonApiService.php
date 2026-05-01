@@ -15,42 +15,68 @@ class PythonApiService
     }
 
     /**
-     * Upload video files ke Flask API.
-     * $videoMap = ['station_name' => 'path/di/storage/public/...']
+     * Upload video files ke Flask API menggunakan curl multipart stream.
+     * Jauh lebih cepat dari file_get_contents karena tidak load ke memory.
      */
     public function uploadVideos(array $videoMap, array $metadata): array
     {
-        $multipart = Http::timeout(120)->asMultipart();
+        $postFields = [];
 
+        // Attach setiap file video sebagai CURLFile (stream, tidak load ke memory)
         foreach ($videoMap as $stationName => $storagePath) {
             $fullPath = Storage::disk('public')->path($storagePath);
             $ext      = pathinfo($storagePath, PATHINFO_EXTENSION);
+            $filename = $stationName . '.' . $ext;
 
-            $multipart = $multipart->attach(
-                'file_list',
-                file_get_contents($fullPath),
-                $stationName . '.' . $ext
-            );
+            $postFields['file_list'][] = new \CURLFile($fullPath, 'video/mp4', $filename);
         }
 
+        // Kalau ada beberapa video, curl butuh array format khusus
+        // Rebuild dengan key file_list[0], file_list[1], dst
+        $curlFields = [];
+        foreach (($postFields['file_list'] ?? []) as $i => $curlFile) {
+            $curlFields["file_list[$i]"] = $curlFile;
+        }
+
+        // Attach metadata
         foreach ($metadata as $key => $value) {
-            $multipart = $multipart->attach($key, (string) $value);
+            $curlFields[$key] = (string) $value;
         }
 
-        $response = $multipart->post("{$this->baseUrl}/api/upload");
+        // Kirim dengan curl langsung untuk support CURLFile streaming
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => "{$this->baseUrl}/api/upload",
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $curlFields,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 600,  // 10 menit untuk video besar
+            CURLOPT_CONNECTTIMEOUT => 30,
+        ]);
 
-        if ($response->failed()) {
-            throw new \RuntimeException(
-                "Flask upload gagal [{$response->status()}]: " . $response->body()
-            );
+        $response   = curl_exec($ch);
+        $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            throw new \RuntimeException("Curl error: {$curlError}");
         }
 
-        return $response->json();
+        if ($httpCode >= 400) {
+            throw new \RuntimeException("Flask upload gagal [{$httpCode}]: {$response}");
+        }
+
+        $data = json_decode($response, true);
+        if (!$data) {
+            throw new \RuntimeException("Response Flask tidak valid: {$response}");
+        }
+
+        return $data;
     }
 
     /**
      * Cek status & ambil hasil analisis.
-     * Status: 'processing' | 'completed' | 'failed'
      */
     public function getResults(string $pythonJobId): array
     {
