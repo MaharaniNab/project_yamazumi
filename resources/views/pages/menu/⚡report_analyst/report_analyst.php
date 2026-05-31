@@ -1,14 +1,16 @@
 <?php
 
 use App\Exports\LineAnalysisExport;
+use App\Jobs\ProcessVideoAnalysis;
 use App\Models\AnalysisJob;
 use App\Models\StationResult;
 use App\Models\WorkElement;
-use App\Services\PythonApiService;
+use App\Services\CvAnalysisService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 new
     #[Title('Report Analyst')] class extends Component {
@@ -34,18 +36,32 @@ new
     public $isProcessing      = false;
     public $processingMessage = 'Sedang menganalisis video...';
 
+    public $isFailed     = false;
+    public $errorMessage = '';
+
     public function mount()
     {
         $job = AnalysisJob::latest()->first();
         if (!$job) return;
 
-        if ($job->status === 'processing') {
-            $this->isProcessing = true;
+        // 'pending'    = baru didispatch, worker queue belum upload ke Flask
+        // 'processing' = Flask sedang menganalisa video di background
+        // Keduanya dianggap "masih berjalan": tampilkan loading dan biarkan
+        // wire:poll terus cek status sampai 'completed' (atau 'failed').
+        if (in_array($job->status, ['pending', 'processing'])) {
+            $this->isProcessing      = true;
+            $this->processingMessage = $job->progress_message ?: 'Sedang menganalisis video... mohon tunggu.';
             return;
         }
 
         if ($job->status === 'completed') {
             $this->loadFromDb($job);
+            return;
+        }
+
+        if ($job->status === 'failed') {
+            $this->isFailed     = true;
+            $this->errorMessage = $job->error_msg ?: 'Analisis gagal diproses oleh server.';
         }
     }
 
@@ -57,28 +73,33 @@ new
         if (!$this->isProcessing) return;
 
         $job = AnalysisJob::latest()->first();
-        if (!$job || !$job->python_job_id) return;
+        if (!$job) return;
 
         try {
-            $api    = new PythonApiService();
-            $result = $api->getResults($job->python_job_id);
+            $service = new CvAnalysisService();
+            $status  = $service->checkAndSync($job->id);
 
-            $status = $result['status'] ?? 'processing';
-
-            if ($status === 'processing') {
-                $this->processingMessage = 'Sedang menganalisis video... mohon tunggu.';
+            if ($status === 'processing' || $status === 'pending') {
+                $job->refresh();
+                $base = $job->progress_message ?: 'Sedang menganalisis video... mohon tunggu.';
+                // Tampilkan progress X/Y video kalau Flask sudah melaporkannya
+                if (($job->progress_total ?? 0) > 0) {
+                    $base .= " ({$job->progress_current}/{$job->progress_total} video)";
+                }
+                $this->processingMessage = $base;
                 return;
             }
 
             if ($status === 'failed') {
+                $job->refresh();
                 $this->isProcessing = false;
-                $job->update(['status' => 'failed']);
-                $this->dispatch('swal-toast', icon: 'error', title: 'Gagal', text: 'Analisis gagal diproses oleh Flask.');
+                $this->isFailed     = true;
+                $this->errorMessage = $job->error_msg ?: 'Analisis gagal diproses oleh server.';
+                $this->dispatch('swal-toast', icon: 'error', title: 'Gagal', text: 'Analisis gagal diproses oleh server.');
                 return;
             }
 
             if ($status === 'completed') {
-                $this->saveResultsToDb($job, $result);
                 $this->isProcessing = false;
                 $this->loadFromDb($job->fresh());
                 $this->dispatch('swal-toast', icon: 'success', title: 'Selesai', text: 'Analisis berhasil diselesaikan!');
@@ -86,9 +107,7 @@ new
             }
 
         } catch (\Exception $e) {
-            // Tampilkan error ke user agar mudah debug
             Log::error('checkFlaskStatus error: ' . $e->getMessage());
-            $this->isProcessing = false;
             $this->dispatch('swal-toast', icon: 'error', title: 'Error', text: substr($e->getMessage(), 0, 200));
         }
     }
@@ -103,92 +122,55 @@ new
     }
 
     /**
-     * Simpan hasil dari Flask ke DB Laravel.
+     * Coba lagi: jalankan ulang analisa dari video yang SUDAH tersimpan
+     * (tidak perlu upload ulang dari awal). Dipakai saat status job = failed.
      */
-    private function saveResultsToDb(AnalysisJob $job, array $result): void
+    public function retryAnalysis(): void
     {
-        $summary         = $result['summary']          ?? [];
-        $detailedResults = $result['detailed_results'] ?? [];
-        $videoDurations  = $result['video_durations']  ?? [];
-        $stationProfiles = $result['station_profiles'] ?? [];
+        $job = AnalysisJob::latest()->first();
+        if (!$job) return;
 
-        // Helper untuk parse nilai string dari Flask: "45.6s" → 45.6
-        $parse = function (string $key, string $suffix = '') use ($summary): float {
-            $raw = $summary[$key] ?? '0';
-            return floatval(str_replace($suffix, '', (string) $raw));
-        };
-
-        // Hapus data stasiun lama
-        StationResult::where('job_id', $job->id)->delete();
-
-        $validStatuses   = ['Bottleneck', 'At-Risk', 'Balanced', 'Underloaded'];
-        $validRiskCats   = ['Low Risk', 'Medium Risk', 'High Risk'];
-        $kategoriMap     = [
-            'Value-Added'                   => 'VA',
-            'Necessary but Non-Value-Added' => 'N-NVA',
-            'Non-Value-Added'               => 'NVA',
-        ];
-
-        $order = 1;
-        foreach ($videoDurations as $stationName => $meanCt) {
-            $profile  = $stationProfiles[$stationName] ?? [];
-            $elements = $detailedResults[$stationName] ?? [];
-
-            $flaskStatus = $profile['status'] ?? 'Balanced';
-            $dbStatus    = in_array($flaskStatus, $validStatuses) ? $flaskStatus : 'Balanced';
-
-            $flaskRisk = $profile['risk_category'] ?? 'Low Risk';
-            $dbRisk    = in_array($flaskRisk, $validRiskCats) ? $flaskRisk : 'Low Risk';
-
-            // Simpan StationResult — nama kolom sesuai migration create_station_results
-            $station = StationResult::create([
-                'job_id'          => $job->id,
-                'station_name'    => $stationName,
-                'station_order'   => $order++,
-                'mean_ct'         => floatval($meanCt),
-                'robust_ct'       => floatval($profile['robust_ct']  ?? $meanCt),
-                'cv_persen'       => floatval($profile['cv_persen']  ?? 0),
-                'station_sigma'   => floatval($profile['sigma']      ?? 0),
-                'idle_time'       => floatval($profile['idle_time']  ?? 0),
-                'overflow_robust' => floatval($profile['overflow_robust'] ?? 0),
-                'status_station'  => $dbStatus,
-                'risk_category'   => $dbRisk,
-            ]);
-
-            // Simpan WorkElement
-            foreach ($elements as $el) {
-                $elKat = $el['kategori'] ?? 'Non-Value-Added';
-                WorkElement::create([
-                    'station_id'   => $station->id,
-                    'elemen_kerja' => $el['elemen_kerja']  ?? '',
-                    'durasi_detik' => floatval($el['durasi_detik']  ?? 0),
-                    'std_dev'      => floatval($el['std_dev']       ?? 0),
-                    'frekuensi'    => intval($el['frekuensi']       ?? 1),
-                    'total_durasi' => floatval($el['total_durasi']  ?? $el['durasi_detik'] ?? 0),
-                    'kategori_va'  => $kategoriMap[$elKat] ?? 'NVA',
-                ]);
-            }
+        // Susun ulang videoMap dari file yang tersimpan di storage
+        $files = Storage::disk('public')->files("analisis_videos/{$job->id}");
+        if (empty($files)) {
+            $this->dispatch('swal-toast', icon: 'error', title: 'Tidak bisa coba lagi',
+                text: 'Video sumber tidak ditemukan. Silakan upload ulang.');
+            return;
         }
 
-        // Update AnalysisJob — nama kolom sesuai migration create_analysis_jobs
-        $totalCt  = $parse('Total Cycle Time', 's');
-        $neckTime = $parse('Neck Time', 's');
-        $le       = $parse('Presentase Line Balance', '%');
-        $bd       = $parse('Balance Delay', '%');
-        $si       = floatval($summary['Smoothness Index'] ?? 0); // tidak ada suffix
-        $lineOut  = intval($summary['Line Output Hari'] ?? 0);
+        $videoMap = [];
+        foreach ($files as $path) {
+            $videoMap[pathinfo($path, PATHINFO_FILENAME)] = $path;
+        }
 
+        // Reset job ke kondisi awal lalu dispatch ulang ke queue
         $job->update([
-            'status'           => 'completed',
-            'total_cycle_time' => $totalCt,
-            'neck_time_mean'   => $neckTime,
-            'neck_time_robust' => $neckTime,
-            'line_efficiency'  => $le,
-            'balance_delay'    => $bd,
-            'smoothness_index' => $si,
-            'line_output_hari' => $lineOut,
-            'chart_base64'     => $result['chart_base64'] ?? null,
+            'status'           => 'pending',
+            'error_msg'        => null,
+            'python_job_id'    => null,
+            'progress_current' => 0,
+            'progress_total'   => 0,
+            'progress_message' => '',
         ]);
+
+        ProcessVideoAnalysis::dispatch($job->id, $videoMap, [
+            'output_harian' => $job->output_harian,
+            'mp_aktual'     => $job->mp_aktual,
+            'nama_line'     => $job->line_name,
+            'nama_bagian'   => $job->part_name ?? $job->line_name,
+        ]);
+
+        $this->reset('isFailed', 'errorMessage');
+        $this->isProcessing      = true;
+        $this->processingMessage = 'Mencoba lagi... mengirim ulang ke server analisa.';
+    }
+
+    /**
+     * Kembali ke halaman upload untuk mulai analisa baru dari awal.
+     */
+    public function goToUpload()
+    {
+        return $this->redirectRoute('menu.analyst', navigate: true);
     }
 
     /**

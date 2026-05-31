@@ -1,12 +1,11 @@
 <?php
 
-use App\Services\PythonApiService;
+use App\Jobs\ProcessVideoAnalysis;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\AnalysisJob;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 new
     #[Title('Setup Analyst')]
@@ -23,7 +22,7 @@ new
     public $style;
     public $mp_aktual;
 
-    public $file_list = [];
+    public $file_list    = [];
     public $station_name = [];
 
     public $effectiveHours = 7.2;
@@ -72,7 +71,7 @@ new
         unset($this->file_list[$i]);
         unset($this->station_name[$i]);
 
-        $this->file_list   = array_values($this->file_list);
+        $this->file_list    = array_values($this->file_list);
         $this->station_name = array_values($this->station_name);
     }
 
@@ -96,74 +95,48 @@ new
         $jamKerjaDetik = $this->effectiveHours * 3600;
         $taktTime      = round($jamKerjaDetik / $this->output_harian, 2);
 
-        // 1. Simpan job ke DB (sama seperti sebelumnya)
+        // 1. Buat job di DB
         $job = AnalysisJob::create([
-            'user_id'        => Auth::id(),
-            'line_name'      => $this->line_name,
-            'part_name'      => $this->part_name,
-            'style'          => $this->style,
-            'brand'          => $this->brand,
-            'output_harian'  => $this->output_harian,
-            'mp_aktual'      => (int) $this->mp_aktual,
-            'jam_kerja_detik'=> $jamKerjaDetik,
-            'takt_time'      => $taktTime,
-            'n_stations'     => count($this->file_list),
-            'status'         => 'processing',
+            'user_id'         => Auth::id(),
+            'line_name'       => $this->line_name,
+            'part_name'       => $this->part_name,
+            'style'           => $this->style,
+            'brand'           => $this->brand,
+            'output_harian'   => $this->output_harian,
+            'mp_aktual'       => (int) $this->mp_aktual,
+            'jam_kerja_detik' => $jamKerjaDetik,
+            'takt_time'       => $taktTime,
+            'n_stations'      => count($this->file_list),
+            'status'          => 'pending',
         ]);
 
-        // 2. Simpan video ke storage lokal (sama seperti sebelumnya)
+        // 2. Simpan video ke storage (cepat, file sudah di temp Livewire)
         $videoMap = [];
         foreach ($this->file_list as $i => $file) {
-            $name     = $this->station_name[$i];
-            $ext      = $file->getClientOriginalExtension();
-            $path     = "analisis_videos/{$job->id}/{$name}.{$ext}";
+            $name = $this->station_name[$i] ?? 'Stasiun ' . ($i + 1);
+            $ext  = $file->getClientOriginalExtension();
 
-            $file->storeAs(
-                "analisis_videos/{$job->id}",
-                "{$name}.{$ext}",
-                'public'
-            );
+            $file->storeAs("analisis_videos/{$job->id}", "{$name}.{$ext}", 'public');
 
-            $videoMap[$name] = $path;
+            $videoMap[$name] = "analisis_videos/{$job->id}/{$name}.{$ext}";
         }
 
-        // 3. Kirim ke Flask API
-        try {
-            $api = new PythonApiService();
+        // 3. Metadata untuk Flask
+        $metadata = [
+            'output_harian' => $this->output_harian,
+            'mp_aktual'     => $this->mp_aktual,
+            'nama_line'     => $this->line_name,
+            'nama_bagian'   => $this->part_name ?? $this->line_name,
+        ];
 
-            $metadata = [
-                'output_harian' => $this->output_harian,
-                'mp_aktual'     => $this->mp_aktual,
-                'nama_line'     => $this->line_name,
-                'nama_bagian'   => $this->part_name ?? $this->line_name,
-            ];
-
-            $result = $api->uploadVideos($videoMap, $metadata);
-
-            // 4. Simpan python_job_id ke AnalysisJob
-            $job->update([
-                'python_job_id' => $result['job_id'],
-                'status'        => 'processing',
-            ]);
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Flask upload error: ' . $e->getMessage());
-            $job->update(['status' => 'failed']);
-
-            $this->dispatch(
-                'swal-toast',
-                icon: 'error',
-                title: 'Flask API Error',
-                text: 'Gagal menghubungi API: ' . $e->getMessage()
-            );
-            return;
-        }
+        // 4. Dispatch ke queue worker (upload ke Flask berjalan di background CLI)
+        ProcessVideoAnalysis::dispatch($job->id, $videoMap, $metadata);
 
         $this->dispatch(
             'swal-toast',
             icon: 'success',
             title: 'Berhasil',
-            text: 'Video berhasil diupload dan sedang diproses.'
+            text: 'Video tersimpan. Sedang mengirim ke server analisa...'
         );
 
         $this->redirectRoute('menu.report', navigate: true);

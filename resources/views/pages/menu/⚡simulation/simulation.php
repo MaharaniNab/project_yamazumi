@@ -7,7 +7,7 @@ use App\Models\SimulationStation;
 use App\Models\SimulationAction;
 use App\Models\StationResult;
 use App\Models\WorkElement;
-use App\Services\PythonApiService;
+use App\Services\CvAnalysisService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -67,8 +67,12 @@ new
         $this->isRunning = true;
 
         try {
-            $api    = new PythonApiService();
-            $result = $api->runSimulation($this->job->python_job_id);
+            $api    = new CvAnalysisService();
+            $result = $api->runSimulation($this->job->id);
+
+            if (!$result) {
+                throw new \RuntimeException('Simulasi gagal: server analisis tidak merespons atau job belum diproses.');
+            }
 
             $this->saveSimulationToDb($result);
 

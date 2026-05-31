@@ -35,7 +35,10 @@ return [
         ],
     ],
 
-    'python_api' => [
-        'url' => env('PYTHON_API_URL', 'http://127.0.0.1:5000'),],
+    'flask_api' => [
+    'url'     => env('FLASK_API_URL', 'http://localhost:5000'),
+    'key'     => env('FLASK_API_KEY'),
+    'timeout' => env('FLASK_API_TIMEOUT', 600),
+],
 
 ];

@@ -9,6 +9,26 @@
             Cek Status Sekarang
         </flux:button>
     </div>
+
+    {{-- FAILED STATE --}}
+    @elseif($isFailed)
+    <div class="flex flex-col items-center justify-center py-32 gap-5 text-center">
+        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30">
+            <flux:icon.exclamation-triangle class="h-8 w-8 text-red-500" />
+        </div>
+        <div>
+            <flux:heading size="lg" class="text-red-600 dark:text-red-400">Analisis Gagal</flux:heading>
+            <p class="mt-2 max-w-xl text-sm text-gray-500 dark:text-neutral-400">{{ $errorMessage }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <flux:button wire:click="retryAnalysis" icon="arrow-path" variant="primary">
+                Coba Lagi
+            </flux:button>
+            <flux:button wire:click="goToUpload" icon="arrow-up-tray" variant="outline">
+                Upload Ulang
+            </flux:button>
+        </div>
+    </div>
     @else
     <div class="flex items-center justify-between">
         <div>
